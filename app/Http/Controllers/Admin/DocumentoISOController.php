@@ -21,8 +21,20 @@ class DocumentoIsoController extends Controller
      */
     public function index()
     {
-        $documentos = DocumentoIso::with(['process.area', 'doctype', 'roles'])->orderBy('id', 'DESC')->get();
-        return view('admin.documento_iso.index', compact('documentos'));
+$admin = auth()->user(); // O Auth::guard('admin')->user();
+
+    // Si el usuario no tiene roles, no ve ningún documento
+    $documentos = collect();
+    if ($admin && $admin->roles->count()) {
+        $documentos = DocumentoIso::whereHas('roles', function($q) use ($admin) {
+                $q->whereIn('roles.id', $admin->roles->pluck('id'));
+            })
+            ->with(['process.area', 'doctype', 'roles'])
+            ->orderBy('id', 'DESC')
+            ->get();
+    }
+
+    return view('admin.documento_iso.index', compact('documentos'));
     }
 
     /**
