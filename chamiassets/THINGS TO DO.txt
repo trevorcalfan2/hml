@@ -1,0 +1,86 @@
+THINGS TO DO CHAMI WEB PAGE
+DONE ----añadir libro de reclamaciones en footer y diseñar la pagina de reclamo
+DONE ----cambiar iconos categorias comida
+DONE =====quitar idiomas de header poner fb e ig en lugar de 
+DONE ------anadir reviews en testimonials 2 o 3 mas
+DONE -----llenar carta virtual
+done---CAMBIAR EMAIL,AÑADIR NUM WHATSAPP, EN PAGINA CONTACTO
+DONE ---cuadrar tarjetas en home
+CANCELADO ---anadir mas subcategorias
+DONE -----añadir enlaces a carta pdf benavides lince y miraflores en la seccion carta , subtitulo(carta detallada por establecimiento)
+CANCELED ---arreglar qr menu
+DONE --cambiar breaacumb galeria a fotos de nuestros clientes
+DONE---reserva solo en benavides y lince
+DONE --- llenar locales 
+DONE ----llenar  nuestra historia
+DONE -----CAMBIAR ENLACE DE RAPPI EN CAROUSEL , ESTA EN BENAVIDES, PASAR A MIRAFLORES
+CANCELED-----anadir un elemento mas a carousel  (APERTURA NOCHE EN BENAVIDES)
+done =--------CAMBIAR PRECIO MILANESA DE POLLO CON ENSALADA
+done - -----------cambiar precio papa rellena
+canceled ---------horario delivery local 12- 5pm
+done----cambiar watsapp debajo del slider
+done-----cambiar numero de whatsapp numero de telefono en local benavides & 
+done----Quitar login button y carrito button
+CANCELED ---HACER UNA COTIZACION VISTA GALERIA Y PDF EMBEDED(CARTAS VIRTUALES) ELFSIGHT
+canceled ----configurar pago con tarjeta TRABAJO ECOMMERCE
+done------CAMBIAR FOTOS NUESTRA HISTORIA POR FOTOS ANTIGUAS ACUERDO AL TEXTO
+DONE ----HACER EL PRESUPUESTO TOTAL URGENTE CON HOSTING Y CORREO--------- DESARROLLO DE LANDING, DENTRO DE 15 DIAS DESARROLLO  DE PEDIDOS ONLINE
+done---hacer boton de carta en la seccion de locales
+done---anadir botobn rappi a la seccionm por locales 
+done ---- cambiar fondo de la carta , por uno de tema restaurante.
+AÑADIR ENLACES LOS BOTONES CARTA DE SECCION CARTA LOS BOTONES YA ESTAN HECHOS SOLO FALTAN LOS ENLACES PUEDE SER DROPBOX O GOOGLE DRIVE O ONEDRIVE
+PENDING ---anadir bebidas, cocteles, caliente, frios a la carta virtual. con precios
+done -----cambiar numero whatsappLINCE ""LOCALES SECCION""
+canceled---configurar login google despues instalar n hosting CUANDO SE IMPLEMENTE ECOMMERCE
+done ---programar platos del dia en carouselcada dia , por ejemplo martes de cabrito establecimiento
+done------CONSEGUIR FOTOGRAFIA DEL EQUIPO ACTUAL DE LOS INTERGRANTES DEL RINCON CHAMI ESPERANZA
+done-----HACER EDIT DE LOS TRES LOCALES EN UNA SOLA IMAGEN, FRONTIS 
+done -------tomar foto de la fachada, la cocikna ya esta 
+done-----cambiar fotos de la pagina principal al tipo que esta moviendo las papas
+
+
+
+done---------CAMBIAR URL USEFULL LINKS LIBRO DE RECLAMACIONES CUANDO EL HOSTING ESTE HABILITADO por pagina web/libroreclamacions/10/page
+done-------ELIMINAR BLOG DIA CANCION CRIOLLA AGREGAR OTROS BLOGS CUANDO ESTE EN LINEA
+done--------------agregar descripcion a platos que faltan en items management
+done-------cambiar link cookie alert config por el hostin/pagina/cookies-policy/11/page
+done----------ACTUALIZAR SMPT CORREO CON EL NUVO CORREO DE  LA EMPRESA admin@restauranterinconchami.pe cuando se compre el correo
+done-------cambiar enlace de cartas en seccion  locales
+done-------hacer la cartaa de lince y benavides digital
+done------añadir elemento a carousel programado (estofado de lengua)
+done------cambiar enlace que redirige el boton descubre nuestra historia al final de introsection
+done------cambiar el año de trayectoria en la pagina principal 
+done---------quitar los logos de las tarjetas en footer
+done-------quitar todo del lince en la pagina 
+done-------son 54años cambiar en el inicio
+DONE -----cambiar el fondo de herosection por algo 
+DONE-----cambar el logo de loadpage por el nuevo logo
+done ---cambiar "la carta" nav a nuestras cartas
+done ---- añadir boton trabajka cpn nosotros al lado de reservacion, activar jobs
+DONE----trayectoria historia, foto, añadir descipocion, fotografia tomada por la revista somos año 1970
+done -------tan grande fuye nuestra acogida, empieza ocn mayuscula (foto, añadir descipcion, fotografia tomada junto al entonces alcalde , de lima, el sñor Alfonzo Barrantes)
+done--------quitar parte de historia, mantenemos decoracion de los años 70, cambiar por mantiene la esencia y decoracion desde hace 54 años
+done--------quitar exito /(titulo
+),dejar solo el comentario
+done---reducir l tamaño del mapa en locales
+done------modificar el diseño por algo mas elegante en libro de reclamaciones
+done ------entregar logo en alta resoluciuon fuente negro, con lunas betas naranja
+canceled -----modificar la carta con platos del chami y fondo claro    AXL
+done ------añadir local de miraflores en locales dropdown
+
+
+
+modificar los mensajes de formulario y de contactos al enviar, estan en ingles que aparezcan en espa;ol tambien el mensaje de confirmacion de reserva a  email
+DONE----añadir preios summum al carousel
+cambiar el estilo delos botones dl nav como el boton de reservacion
+done------cambiar fuente en la seccion historia
+done------organizar, suscribete footer
+
+DONE------resaltar mejor huarique del peru 
+
+done----aladir collages en galeria de los platos en galeria 
+
+DONE*-----los platos del dia van de forma secuencial debajo del herosection
+
+HIGLIGHT----en el carousel solo van novedades------HIGHLIGHT
+cambiar link de carta, en historia en hosting
