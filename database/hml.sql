@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 20, 2025 at 12:51 AM
+-- Generation Time: Aug 21, 2025 at 12:58 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -52,7 +52,8 @@ INSERT INTO `admins` (`id`, `role_id`, `username`, `email`, `first_name`, `last_
 (12, 9, 'test', 'saifislamfci@gmail.com', 'Saiful Islam', 'Sharif', '6402c0c90904c.jpg', '$2y$10$7mmLn1fWdaYUkNQY8fEwY.QB6csIcv9WpFo5zLDvYy4UFZvuqq48W', 1, '2023-03-04 03:53:45', '2023-03-04 03:53:45'),
 (13, 10, 'staff', 'ric@hotmail.com', 'staff', 'staff', '654a7ae8719fd.jpg', '$2y$10$PF5AQ8KjPS2r48AcYrSHS.QKVCu1mNL1D00z91k10LEv9PZjAKnpK', 1, '2023-11-07 19:59:04', '2024-06-05 20:19:38'),
 (14, 10, 'Staff2', 'admin@rinconchami.pe', 'Staff2', 'Staff2', '658dd3f30f514.jpeg', '$2y$10$KtORo7v9KnDozQPxVqXtgOjzDZuMM18z5stH16Q17A6.FgIps2sNG', 1, '2023-12-28 22:00:51', '2023-12-28 22:00:51'),
-(15, 10, 'rc', 'rinconchami@hotmail.com', 'rc', 'rc', '6660ac602a003.jpg', '$2y$10$JW6xjR3x504.osORugPuKu6AjLuAn.Kwru5oNocEr0oJFbM2cXXSy', 1, '2024-06-05 20:20:16', '2024-06-05 20:20:16');
+(15, 10, 'rc', 'rinconchami@hotmail.com', 'rc', 'rc', '6660ac602a003.jpg', '$2y$10$JW6xjR3x504.osORugPuKu6AjLuAn.Kwru5oNocEr0oJFbM2cXXSy', 1, '2024-06-05 20:20:16', '2024-06-05 20:20:16'),
+(16, 7, 'admin2', 'admin@gmail.com', 'admin2', 'admin2', '64b893b1375a9.jpg', '$2y$10$63DYZV88ryHmfvm0mLGKNuMo21XaEFvU6aXiWiOggVY0dNkzx0DVO', 1, '2020-09-24 00:14:48', '2020-09-28 11:24:32');
 
 -- --------------------------------------------------------
 
@@ -81,9 +82,18 @@ CREATE TABLE `area` (
 --
 
 INSERT INTO `area` (`area_id`, `nombre`) VALUES
-(1, 'Calidad'),
-(2, 'Producción'),
-(3, 'Recursos Humanos');
+(1, 'Almacenaje de Carga '),
+(2, 'Atención al Cliente'),
+(3, 'Carga Internacional'),
+(4, 'Gestión Aduanera'),
+(5, 'Gestión Comercial'),
+(6, 'Gestión de la Alta Dirección'),
+(7, 'Gestión de la Seguridad'),
+(8, 'Gestión de Mantenimiento'),
+(9, 'Gestión de Sistemas Informaticos'),
+(10, 'Gestión Humana'),
+(11, 'Gestión Legal'),
+(12, 'Sistema Integrado de Gestión');
 
 -- --------------------------------------------------------
 
@@ -542,9 +552,13 @@ CREATE TABLE `doctype` (
 
 INSERT INTO `doctype` (`doctype_id`, `nombre`) VALUES
 (1, 'Procedimiento'),
-(2, 'Instructivo'),
-(3, 'Manual'),
-(4, 'Registro');
+(2, 'Políticas'),
+(3, 'Registro'),
+(4, 'Documentos'),
+(5, 'Instructivo'),
+(6, 'Manual'),
+(7, 'Plan'),
+(8, 'Código');
 
 -- --------------------------------------------------------
 
@@ -554,6 +568,7 @@ INSERT INTO `doctype` (`doctype_id`, `nombre`) VALUES
 
 CREATE TABLE `documento_iso` (
   `id` bigint(20) NOT NULL,
+  `doc_id` varchar(45) DEFAULT NULL,
   `estado` varchar(255) NOT NULL,
   `responsable` varchar(255) NOT NULL,
   `fecha_revision` date DEFAULT NULL,
@@ -578,9 +593,9 @@ CREATE TABLE `documento_iso` (
 -- Dumping data for table `documento_iso`
 --
 
-INSERT INTO `documento_iso` (`id`, `estado`, `responsable`, `fecha_revision`, `fecha_aprobacion`, `aprobado_por`, `modificaciones`, `archivo`, `historial_versiones`, `anio`, `mes`, `registro`, `comentarios`, `actividad`, `process_id`, `doctype_id`, `estado_workflow`, `aprobador_id`, `fecha_aprobacion_workflow`) VALUES
-(1, 'Vigente', 'Juan Perez', '2024-06-01', '2024-06-15', 'Maria Gomez', 'Primera creación', 'doc1.pdf', NULL, 2024, 'Junio', 'REG-001', 'OK', 'Revisión inicial', 1, 1, 'Aprobado', 7, '2025-08-19 17:24:07'),
-(2, 'Obsoleto', 'Ana Lopez', '2024-05-10', NULL, NULL, 'Obsoleto por actualización', 'doc2.pdf', NULL, 2023, 'Mayo', 'REG-002', 'OK', 'Actualizado', 2, 2, 'Borrador', NULL, NULL);
+INSERT INTO `documento_iso` (`id`, `doc_id`, `estado`, `responsable`, `fecha_revision`, `fecha_aprobacion`, `aprobado_por`, `modificaciones`, `archivo`, `historial_versiones`, `anio`, `mes`, `registro`, `comentarios`, `actividad`, `process_id`, `doctype_id`, `estado_workflow`, `aprobador_id`, `fecha_aprobacion_workflow`) VALUES
+(1, NULL, 'Vigente', 'Juan Perez', '2024-06-01', '2024-06-15', 'Maria Gomez', 'Primera creación', 'doc1.pdf', NULL, 2024, 'Junio', 'REG-001', 'OK', 'Revisión inicial', 1, 1, 'Aprobado', 7, '2025-08-19 17:24:07'),
+(2, NULL, 'Obsoleto', 'Ana Lopez', '2024-05-10', NULL, NULL, 'Obsoleto por actualización', 'doc2.pdf', NULL, 2023, 'Mayo', 'REG-002', 'OK', 'Actualizado', 2, 2, 'Borrador', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -2256,9 +2271,18 @@ CREATE TABLE `process` (
 --
 
 INSERT INTO `process` (`process_id`, `nombre`, `area_id`) VALUES
-(1, 'Control de Documentos', 1),
-(2, 'Capacitación', 3),
-(3, 'Mantenimiento', 2);
+(1, 'Almacenaje de Carga', 1),
+(2, 'Atención al Cliente', 2),
+(3, 'Carga Internacional', 3),
+(4, 'Gestión Aduanera', 4),
+(5, 'Gestión Comercial', 5),
+(6, 'Gestión de la Alta Dirección', 6),
+(7, 'Gestión de la Seguridad', 7),
+(8, 'Gestión de Mantenimiento', 8),
+(9, 'Gestión de Sistemas Informáticos', 9),
+(10, 'Gestión Humana', 10),
+(11, 'Gestión Legal', 11),
+(12, 'Sistema Integrado de Gestión', 12);
 
 -- --------------------------------------------------------
 
@@ -3508,7 +3532,19 @@ INSERT INTO `roles` (`id`, `name`, `permissions`, `created_at`, `updated_at`) VA
 (7, 'Asistente Gestión Humana', '[\"Dashboard\",\"Quality Management\"]', '2020-09-24 00:13:52', '2025-08-19 12:42:30'),
 (8, 'Asistente Gestión Aduanera', '[\"Dashboard\"]', '2020-09-28 11:23:56', '2025-08-19 12:42:45'),
 (9, 'Asistente Gestión Sistemas Informaaticos', '[\"Dashboard\"]', '2023-03-04 03:48:36', '2025-08-19 12:43:16'),
-(10, 'staff', '[\"Dashboard\"]', '2023-11-07 19:53:35', '2023-11-07 19:53:55');
+(10, 'staff', '[\"Dashboard\"]', '2023-11-07 19:53:35', '2023-11-07 19:53:55'),
+(11, 'Coordinador Gestión Humana', '[\"Dashboard\",\"Quality Management\"]', '2020-09-24 00:13:52', '2025-08-19 12:42:30');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `role_area`
+--
+
+CREATE TABLE `role_area` (
+  `role_id` bigint(20) UNSIGNED NOT NULL,
+  `area_id` bigint(20) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -4672,6 +4708,14 @@ ALTER TABLE `roles`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `role_area`
+--
+ALTER TABLE `role_area`
+  ADD PRIMARY KEY (`role_id`,`area_id`),
+  ADD KEY `idx_role_area_role` (`role_id`),
+  ADD KEY `idx_role_area_area` (`area_id`);
+
+--
 -- Indexes for table `serving_methods`
 --
 ALTER TABLE `serving_methods`
@@ -4763,13 +4807,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `admins`
 --
 ALTER TABLE `admins`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `area`
 --
 ALTER TABLE `area`
-  MODIFY `area_id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `area_id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `backups`
@@ -4829,7 +4873,7 @@ ALTER TABLE `customers`
 -- AUTO_INCREMENT for table `doctype`
 --
 ALTER TABLE `doctype`
-  MODIFY `doctype_id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `doctype_id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `documento_iso`
@@ -4979,7 +5023,7 @@ ALTER TABLE `pos_payment_methods`
 -- AUTO_INCREMENT for table `process`
 --
 ALTER TABLE `process`
-  MODIFY `process_id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `process_id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `products`
@@ -5033,7 +5077,7 @@ ALTER TABLE `reservation_input_options`
 -- AUTO_INCREMENT for table `roles`
 --
 ALTER TABLE `roles`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `serving_methods`
@@ -5167,6 +5211,13 @@ ALTER TABLE `postal_codes`
 --
 ALTER TABLE `process`
   ADD CONSTRAINT `process_ibfk_1` FOREIGN KEY (`area_id`) REFERENCES `area` (`area_id`);
+
+--
+-- Constraints for table `role_area`
+--
+ALTER TABLE `role_area`
+  ADD CONSTRAINT `fk_role_area_area` FOREIGN KEY (`area_id`) REFERENCES `area` (`area_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_role_area_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

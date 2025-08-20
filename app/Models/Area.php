@@ -14,4 +14,10 @@ class Area extends Model
     {
         return $this->hasMany(Process::class, 'area_id', 'area_id');
     }
+    public function roles()
+{
+    return $this->belongsToMany(Role::class, 'role_area', 'area_id', 'role_id');
+}
+
+
 }

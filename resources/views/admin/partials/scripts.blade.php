@@ -124,3 +124,104 @@
   });
 </script>
 @endif
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  // --- Mostrar Año/Mes si es Políticas ---
+  @if(isset($doctypes) && count($doctypes))
+  var doctypeSelect = document.getElementById('doctype_id');
+  var politicasId = '';
+  @foreach($doctypes as $doctype)
+    @if(strtolower($doctype->nombre) == 'políticas' || strtolower($doctype->nombre) == 'politicas')
+      politicasId = "{{ $doctype->doctype_id }}";
+    @endif
+  @endforeach
+
+  doctypeSelect.addEventListener('change', function(){
+    document.getElementById('politicas_extra').style.display =
+      (this.value == politicasId) ? 'block' : 'none';
+  });
+
+  // Mostrar si ya está seleccionado al cargar la página
+  if (doctypeSelect.value == politicasId) {
+    document.getElementById('politicas_extra').style.display = 'block';
+  } else {
+    document.getElementById('politicas_extra').style.display = 'none';
+  }
+  @endif
+
+  // --- Filtrar procesos, responsables y aprobadores según área ---
+  var areaSelect = document.getElementById('area_id');
+  var procesoSelect = document.getElementById('process_id');
+  var responsableSelect = document.getElementById('responsable_id');
+  var aprobadoPorSelect = document.getElementById('aprobado_por_id');
+  var mainurl = "{{ url('/') }}";
+
+  areaSelect.addEventListener('change', function () {
+    var areaId = this.value;
+
+    // --- PROCESOS ---
+    procesoSelect.innerHTML = '<option value="" disabled selected>Cargando...</option>';
+    if (areaId) {
+      fetch(mainurl + '/admin/procesos-por-area/' + areaId)
+        .then(response => {
+          if (!response.ok) throw new Error('HTTP status ' + response.status);
+          return response.json();
+        })
+        .then(data => {
+          var options = '<option value="" disabled selected>Seleccione un proceso</option>';
+          data.forEach(function(proceso) {
+            options += `<option value="${proceso.process_id}">${proceso.nombre}</option>`;
+          });
+          procesoSelect.innerHTML = options;
+        })
+        .catch((error) => {
+          procesoSelect.innerHTML = '<option value="" disabled selected>Error cargando procesos</option>';
+          console.error('Error en fetch:', error);
+        });
+    }
+
+    // --- RESPONSABLES y APROBADORES (mismo endpoint, misma lógica) ---
+    responsableSelect.innerHTML = '<option value="" disabled selected>Cargando responsables...</option>';
+    aprobadoPorSelect.innerHTML = '<option value="" disabled selected>Cargando aprobadores...</option>';
+    if (areaId) {
+      fetch(mainurl + '/admin/responsables-por-area/' + areaId)
+        .then(response => {
+          if (!response.ok) throw new Error('HTTP status ' + response.status);
+          return response.json();
+        })
+        .then(data => {
+          // --- Para responsable ---
+          var optionsRes = '<option value="" disabled selected>Seleccione responsable</option>';
+          // --- Para aprobador ---
+          var optionsApr = '<option value="" disabled selected>Seleccione aprobador</option>';
+
+          if(data.length == 0) {
+            optionsRes += '<option value="" disabled>No hay responsable disponible</option>';
+            optionsApr += '<option value="" disabled>No hay aprobador disponible</option>';
+          } else {
+            data.forEach(function(user) {
+              var label = `${user.first_name} ${user.last_name} (${user.role_name})`;
+              optionsRes += `<option value="${user.id}">${label}</option>`;
+              optionsApr += `<option value="${user.id}">${label}</option>`;
+            });
+          }
+          responsableSelect.innerHTML = optionsRes;
+          aprobadoPorSelect.innerHTML = optionsApr;
+        })
+        .catch((error) => {
+          responsableSelect.innerHTML = '<option value="" disabled selected>Error cargando responsables</option>';
+          aprobadoPorSelect.innerHTML = '<option value="" disabled selected>Error cargando aprobadores</option>';
+          console.error('Error en fetch responsables/aprobadores:', error);
+        });
+    }
+  });
+
+}); // DOMContentLoaded
+</script>
+

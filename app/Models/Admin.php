@@ -19,8 +19,10 @@ class Admin extends Authenticatable
     }
 
     // Nueva relación: muchos a muchos
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class, 'admin_role', 'admin_id', 'role_id');
-    }
+   public function roles()
+{
+    return $this->belongsToMany(Role::class, 'admin_role', 'admin_id', 'role_id');
+}
+
+    
 }

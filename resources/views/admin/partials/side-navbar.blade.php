@@ -130,62 +130,7 @@
                 @endif
 
 
-                @if (empty($admin->role) || (!empty($permissions) && in_array('Product Management', $permissions)))
-                    {{-- Product --}}
-                    <li
-                        class="nav-item
-                        @if (request()->path() == 'admin/category') active
-                        @elseif (request()->path() == 'admin/subcategory') active
-                        @elseif(request()->path() == 'admin/product') active
-                        @elseif(request()->path() == 'admin/product/create') active
-                        @elseif(request()->is('admin/product/*/edit')) active
-                        @elseif(request()->is('admin/category/*/edit')) active >
-                        @elseif(request()->is('admin/subcategory/*/edit')) active @endif">
-                        <a data-toggle="collapse" href="#category">
-                            <i class="fas fa-hamburger"></i>
-                            <p>Items Management</p>
-                            <span class="caret"></span>
-                        </a>
-                        <div class="collapse
-                        @if (request()->path() == 'admin/category') show
-                        @elseif (request()->path() == 'admin/subcategory') show
-                        @elseif(request()->path() == 'admin/product/create') show
-                        @elseif(request()->is('admin/category/*/edit')) show
-                        @elseif(request()->is('admin/subcategory/*/edit')) show
-                        @elseif(request()->path() == 'admin/product') show
-                        @elseif(request()->is('admin/product/*/edit')) show @endif"
-                            id="category">
-                            <ul class="nav nav-collapse">
-                                <li
-                                    class="
-                @if (request()->path() == 'admin/category') active
-                @elseif(request()->is('admin/category/*/edit')) active @endif">
-                                    <a href="{{ route('admin.category.index') . '?language=' . $default->code }}">
-                                        <span class="sub-item">Category & Tax</span>
-                                    </a>
-                                </li>
-                                <li
-                                    class=" @if (request()->path() == 'admin/subcategory') active  @elseif(request()->is('admin/subcategory/*/edit')) active @endif">
-                                    <a href="{{ route('admin.subcategory.index') . '?language=' . $default->code }}">
-                                        <span class="sub-item">Subcategories</span>
-                                    </a>
-                                </li>
-
-                                <li
-                                    class="
-                @if (request()->path() == 'admin/product') active
-                @elseif(request()->is('admin/product/*/edit')) active
-                @elseif(request()->path() == 'admin/product/create') active @endif">
-                                    <a href="{{ route('admin.product.index') . '?language=' . $default->code }}">
-                                        <span class="sub-item">Items</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-                @endif
-
-
+               
 
 
              

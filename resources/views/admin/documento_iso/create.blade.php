@@ -1,6 +1,10 @@
 @extends('admin.layout')
 
 @section('content')
+
+
+
+
 <div class="page-header">
   <h4 class="page-title">Nuevo Documento ISO</h4>
   <ul class="breadcrumbs">
@@ -36,41 +40,91 @@
 
         <div class="card-body row">
 
-          {{-- ✅ Select dinámico de Doctype --}}
+          {{-- ID Referencia ISO (doc_Id) --}}
+          <div class="form-group col-md-6">
+            <label>ID referencia ISO (doc_Id)</label>
+            <input type="text" name="doc_Id" class="form-control" value="{{ old('doc_Id') }}">
+          </div>
+
+          {{-- Tipo de Documento --}}
           <div class="form-group col-md-6">
             <label>Tipo de Documento</label>
-            <select name="doctype_id" class="form-control" required>
+            <select name="doctype_id" id="doctype_id" class="form-control" required>
               <option value="" disabled selected>Seleccione un tipo</option>
               @foreach($doctypes as $doctype)
-                <option value="{{ $doctype->doctype_id }}" {{ old('doctype_id') == $doctype->doctype_id ? 'selected' : '' }}>
-                  {{ $doctype->nombre }}
-                </option>
+                <option value="{{ $doctype->doctype_id }}">{{ $doctype->nombre }}</option>
               @endforeach
             </select>
           </div>
 
+          {{-- Año/Mes si es Políticas --}}
+          <div id="politicas_extra" class="col-md-12" style="display:none;">
+            <div class="form-group col-md-6">
+              <label>Año</label>
+              <input type="text" name="anio" class="form-control" value="{{ old('anio') }}">
+            </div>
+            <div class="form-group col-md-6">
+              <label>Mes</label>
+              <input type="text" name="mes" class="form-control" value="{{ old('mes') }}">
+            </div>
+          </div>
+
           {{-- Estado --}}
+          @php
+  // Si es superadmin no tiene rol_id (puede todo)
+  $isSuperAdmin = empty($admin->role_id);
+
+  // Verifica si es jefe o coordinador (rolActual puede ser null si es superadmin)
+  $rolNombre = $rolActual ? strtolower($rolActual->name) : '';
+  $isJefe = (strpos($rolNombre, 'coordinador') !== false || strpos($rolNombre, 'jefe') !== false);
+@endphp
+
+<div class="form-group col-md-6">
+  <label>Estado</label>
+  <select name="estado" class="form-control" required>
+    <option value="" disabled {{ old('estado') ? '' : 'selected' }}>Seleccione estado</option>
+    @if ($isSuperAdmin || $isJefe)
+        <option value="VIGENTE" {{ old('estado') == 'VIGENTE' ? 'selected' : '' }}>VIGENTE</option>
+        <option value="EN REVISIÓN" {{ old('estado') == 'EN REVISIÓN' ? 'selected' : '' }}>EN REVISIÓN</option>
+        <option value="FALTA" {{ old('estado') == 'FALTA' ? 'selected' : '' }}>FALTA</option>
+        <option value="OBSOLETO" {{ old('estado') == 'OBSOLETO' ? 'selected' : '' }}>OBSOLETO</option>
+    @else
+        <option value="EN REVISIÓN" {{ old('estado') == 'EN REVISIÓN' ? 'selected' : '' }}>EN REVISIÓN</option>
+    @endif
+  </select>
+</div>
+
+
+
+
+
+
+         {{-- Responsable (combo dinámico) --}}
+        <div class="form-group col-md-6">
+          <label>Responsable</label>
+          <select name="responsable" class="form-control" id="responsable_id" required>
+            <option value="" disabled selected>Seleccione responsable</option>
+          </select>
+        </div>
+
+
+          {{-- Área --}}
           <div class="form-group col-md-6">
-            <label>Estado</label>
-            <input type="text" name="estado" class="form-control" value="{{ old('estado') }}" required>
+            <label>Área</label>
+            <select name="area_id" class="form-control" required id="area_id">
+              <option value="" disabled selected>Seleccione un área</option>
+              @foreach($areas as $area)
+                <option value="{{ $area->area_id }}">{{ $area->nombre }}</option>
+              @endforeach
+            </select>
           </div>
 
-          {{-- Responsable --}}
-          <div class="form-group col-md-6">
-            <label>Responsable</label>
-            <input type="text" name="responsable" class="form-control" value="{{ old('responsable') }}" required>
-          </div>
-
-          {{-- ✅ Select dinámico de Proceso --}}
+          {{-- Proceso: carga dinámica --}}
           <div class="form-group col-md-6">
             <label>Proceso</label>
-            <select name="process_id" class="form-control" required>
+            <select name="process_id" class="form-control" required id="process_id">
               <option value="" disabled selected>Seleccione un proceso</option>
-              @foreach($procesos as $proceso)
-                <option value="{{ $proceso->process_id }}" {{ old('process_id') == $proceso->process_id ? 'selected' : '' }}>
-                  {{ $proceso->nombre }} ({{ $proceso->area->nombre ?? 'Sin área' }})
-                </option>
-              @endforeach
+              {{-- Las opciones se cargan por JS --}}
             </select>
           </div>
 
@@ -80,46 +134,37 @@
             <input type="file" name="archivo" class="form-control" accept=".pdf,.doc,.docx" required>
           </div>
 
-          {{-- Fechas --}}
+          {{-- Fecha revisión (desactivada) --}}
           <div class="form-group col-md-6">
             <label>Fecha Revisión</label>
-            <input type="text" name="fecha_revision" class="form-control" value="{{ old('fecha_revision') }}">
+            <input type="text" name="fecha_revision" class="form-control" value="" disabled>
           </div>
 
+          {{-- Fecha Aprobación --}}
           <div class="form-group col-md-6">
             <label>Fecha Aprobación</label>
-            <input type="date" name="fecha_aprobacion" class="form-control" value="{{ old('fecha_aprobacion') }}">
+            <input type="text" name="fecha_aprobacion" id="fecha_aprobacion" class="form-control" readonly style="background:#fff;">
           </div>
 
-          {{-- Aprobador --}}
-          <div class="form-group col-md-6">
-            <label>Aprobado por</label>
-            <input type="text" name="aprobado_por" class="form-control" value="{{ old('aprobado_por') }}">
-          </div>
+         <div class="form-group col-md-6">
+          <label>Aprobado por</label>
+          <select name="aprobado_por" class="form-control" id="aprobado_por_id" required>
+            <option value="" disabled selected>Seleccione aprobador</option>
+          </select>
+        </div>
 
-          {{-- Textareas --}}
+
+
+          {{-- Modificaciones (desactivado) --}}
           <div class="form-group col-md-12">
             <label>Modificaciones</label>
-            <textarea name="modificaciones" class="form-control" rows="3">{{ old('modificaciones') }}</textarea>
+            <textarea name="modificaciones" class="form-control" rows="3" disabled></textarea>
           </div>
 
+          {{-- Historial de Versiones (readonly) --}}
           <div class="form-group col-md-12">
             <label>Historial de Versiones</label>
-            <textarea name="historial_versiones" class="form-control" rows="3">{{ old('historial_versiones') }}</textarea>
-          </div>
-
-          {{-- Campos especiales SOLO para registros --}}
-          <div class="form-group col-md-4 registro-only">
-            <label>Año</label>
-            <input type="text" name="anio" class="form-control" value="{{ old('anio') }}">
-          </div>
-          <div class="form-group col-md-4 registro-only">
-            <label>Mes</label>
-            <input type="text" name="mes" class="form-control" value="{{ old('mes') }}">
-          </div>
-          <div class="form-group col-md-4 registro-only">
-            <label>Registro</label>
-            <input type="text" name="registro" class="form-control" value="{{ old('registro') }}">
+            <textarea name="historial_versiones" class="form-control" rows="3" readonly></textarea>
           </div>
 
           {{-- Comentarios --}}
@@ -131,7 +176,9 @@
           {{-- Actividad --}}
           <div class="form-group col-md-6">
             <label>Actividad</label>
-            <textarea name="actividad" class="form-control" rows="2">{{ old('actividad') }}</textarea>
+            <div style="background: #f5f5f5; padding: 8px; border-radius: 4px; min-height: 40px;">
+              No hay actividad registrada.
+            </div>
           </div>
 
         </div>
@@ -146,38 +193,6 @@
 </div>
 @endsection
 
-@push('scripts')
-<!-- Flatpickr JS & Plugin -->
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    flatpickr("input[name='fecha_revision']", {
-      dateFormat: "Y-m-d",
-      allowInput: true,
-      clickOpens: true
-    });
 
-    flatpickr("input[name='anio']", {
-      dateFormat: "Y",
-      allowInput: true,
-      clickOpens: true
-    });
-
-    flatpickr("input[name='mes']", {
-      plugins: [
-        new monthSelectPlugin({
-          shorthand: true,
-          dateFormat: "F",
-          altFormat: "F Y",
-          theme: "light"
-        })
-      ],
-      allowInput: true,
-      clickOpens: true
-    });
-  });
-</script>
-@endpush
 

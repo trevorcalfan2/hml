@@ -11,7 +11,15 @@ class Role extends Model
     'permissions',
 ];
 
-    public function admins() {
-      return $this->hasMany('App\Models\Admin');
-    }
+    
+    public function admins()
+{
+    return $this->belongsToMany(Admin::class, 'admin_role', 'role_id', 'admin_id');
+}
+public function areas()
+{
+    return $this->belongsToMany(Area::class, 'role_area', 'role_id', 'area_id');
+}
+
+
 }

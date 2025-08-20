@@ -8,8 +8,7 @@ class DocumentoIso extends Model
     protected $table = 'documento_iso';
     protected $primaryKey = 'id';
 
-    protected $fillable = [
-        'estado', 'responsable', 'fecha_revision', 'fecha_aprobacion', 'aprobado_por', 'modificaciones',
+    protected $fillable = ['doc_id','estado', 'responsable', 'fecha_revision', 'fecha_aprobacion', 'aprobado_por', 'modificaciones',
         'archivo', 'historial_versiones', 'anio', 'mes', 'registro', 'comentarios', 'actividad',
         'process_id', 'doctype_id', 'estado_workflow', 'aprobador_id', 'fecha_aprobacion_workflow'
     ];
@@ -34,9 +33,6 @@ class DocumentoIso extends Model
         return $this->hasMany(DocumentoIsoLog::class, 'documento_iso_id');
     }
 
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class, 'documento_iso_role', 'documento_iso_id', 'role_id');
-    }
+  
 }
 

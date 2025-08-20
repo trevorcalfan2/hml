@@ -222,10 +222,27 @@ Route::group(['prefix' => 'admin', 'middleware' => 'guest:admin'], function () {
 
     Route::get('/mail-form', 'Admin\ForgetController@mailForm')->name('admin.forget.form');
     Route::post('/sendmail', 'Admin\ForgetController@sendmail')->name('admin.forget.mail');
+   
 });
 
 
 Route::group(['prefix' => 'admin', 'middleware' => ['auth:admin', 'checkstatus']], function () {
+
+
+
+
+
+
+    //ultimas rutas agregadas gestiona combobox en crear documento iso
+Route::get('/procesos-por-area/{area}', 'Admin\DocumentoIsoController@procesosPorArea');
+Route::get('/responsables-por-area/{area}', 'Admin\DocumentoIsoController@responsablesPorArea');
+Route::get('/admin/aprobadores-por-area/{area}', 'Admin\DocumentoIsoController@aprobadoresPorArea');
+
+
+
+
+
+
 
     // RTL check
     Route::get('/rtlcheck/{langid}', 'Admin\LanguageController@rtlcheck')->name('admin.rtlcheck');
@@ -250,6 +267,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:admin', 'checkstatus']
     Route::post('/profile/updatePassword', 'Admin\ProfileController@updatePassword')->name('admin.updatePassword');
     Route::get('/profile/edit', 'Admin\ProfileController@editProfile')->name('admin.editProfile');
     Route::post('/profile/update', 'Admin\ProfileController@updateProfile')->name('admin.updateProfile');
+
+
 
     /**
      * =======================================================

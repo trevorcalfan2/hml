@@ -1,0 +1,128 @@
+FIXEARRRRRRR-R--RR-R-R
+FIXEAR PAR ALA PRXIMA NO FUNCIONE APROBADO POR no sale nada , en responsable no sale responsables del área  y en proceso sale error cargando procesos
+
+
+
+
+
+
+
+
+Sistema de Gestión de Documentos ISO en Laravel
+
+Estoy desarrollando un módulo de gestión documental ISO en Laravel. Te detallo todo lo avanzado y lo que necesito mantener/continuar:
+
+Estructura General y Rutas:
+
+Modelo principal: DocumentoIso con relaciones a áreas (Area), procesos (Process), tipo de documento (Doctype), versiones y logs.
+
+Rutas y Controladores:
+
+Las rutas usan prefijos /admin y controladores en Admin.
+
+Ejemplo de rutas AJAX para cargar procesos y responsables:
+
+/admin/procesos-por-area/{area}
+
+/admin/responsables-por-area/{area}
+
+Reglas para la Gestión y Flujo del Documento
+
+Flujo estándar ISO:
+
+Cualquier usuario con permiso puede crear/subir documentos y asignar un responsable (normalmente, jefe o coordinador de área).
+
+El documento inicia con estado "EN REVISIÓN".
+
+Solo el jefe o coordinador del área puede aprobar el documento (cambiar el estado a “VIGENTE”).
+
+Los roles de responsable y aprobador suelen coincidir, pero pueden diferenciarse si es necesario.
+
+Formulario (Blade) de Creación de Documento
+
+Campos clave:
+
+ID referencia ISO, tipo de documento, estado, responsable (combo dinámico), área (combo), proceso (combo dinámico), archivo, fecha de aprobación, aprobado por (combo dinámico), modificaciones, historial de versiones, comentarios.
+
+Filtros dinámicos (JS):
+
+Al cambiar el área, se cargan procesos de esa área y se llenan los combos de responsable y aprobador con los usuarios que tengan el rol de “coordinador” o “jefe” de esa área.
+
+El campo de año/mes se muestra solo si el tipo de documento es “Políticas”.
+
+Combos de responsables y aprobadores:
+
+Se cargan mediante fetch AJAX desde /admin/responsables-por-area/{area} y solo muestran usuarios con rol que contenga “coordinador” o “jefe” para el área seleccionada.
+
+Modelos y Relaciones
+
+Admin: puede tener uno o varios roles.
+
+Role: tiene campo “name” (ejemplo: “coordinador de gestión humana”).
+
+Área: relacionada con roles mediante una tabla pivote role_area.
+
+Consulta de responsables/aprobadores:
+
+Busca admins donde su rol tenga “coordinador” o “jefe” y que estén relacionados con el área seleccionada.
+
+Ejemplo de JS para combos dinámicos
+var areaSelect = document.getElementById('area_id');
+var procesoSelect = document.getElementById('process_id');
+var responsableSelect = document.getElementById('responsable_id');
+var aprobadoPorSelect = document.getElementById('aprobado_por_id');
+var mainurl = "{{ url('/') }}";
+areaSelect.addEventListener('change', function () {
+var areaId = this.value;
+// Cargar procesos
+fetch(mainurl + '/admin/procesos-por-area/' + areaId)
+// ... (fetch y render de procesos)
+// Cargar responsables
+fetch(mainurl + '/admin/responsables-por-area/' + areaId)
+// ... (fetch y render de responsables)
+// Cargar aprobadores (igual a responsables)
+fetch(mainurl + '/admin/responsables-por-area/' + areaId)
+// ... (fetch y render de aprobadores)
+});
+
+Backend
+
+En el controlador:
+
+Endpoint /admin/responsables-por-area/{area} devuelve admins cuyo rol (en la tabla roles) tenga “coordinador” o “jefe” en el nombre y que estén vinculados al área.
+
+SQL base para filtro:
+SELECT * FROM admins
+JOIN roles ON admins.role_id = roles.id
+WHERE (roles.name LIKE '%coordinador%' OR roles.name LIKE '%jefe%')
+AND roles.id IN (
+SELECT role_id FROM role_area WHERE area_id = {areaId}
+)
+
+Estado del Documento ISO
+
+Estados posibles:
+
+VIGENTE: Documento aprobado y en uso.
+
+EN REVISIÓN: Documento subido, pero pendiente de aprobación.
+
+FALTA: Documento aún no existe o está pendiente de subir.
+
+OBSOLETO: Documento fuera de vigencia, reemplazado o anulado.
+
+Flujo esperado:
+
+El usuario (asistente, etc.) sube el documento → queda “En Revisión”.
+
+El jefe o coordinador del área (aprobador) revisa y cambia el estado a “Vigente” si lo aprueba.
+
+Requerimientos de permisos
+
+Cualquier usuario con permiso puede subir documentos.
+
+Solo jefe/coordinador puede aprobar (cambiar estado a “VIGENTE”).
+
+El sistema debe ser flexible para mostrar siempre los responsables y aprobadores correctos según el área y rol.
+
+Por favor, continúa la asesoría, solución de problemas y desarrollo de código manteniendo esta estructura, requerimientos y contexto. Si necesitas el código de algún archivo en específico, solo pídemelo.

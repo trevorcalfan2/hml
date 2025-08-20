@@ -4,29 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Role extends Model
+class Process extends Model
 {
-    protected $table = 'roles';
+    protected $table = 'process';
+    protected $primaryKey = 'process_id';
 
-    protected $fillable = [
-        'name',
-        'permissions',
-    ];
+    protected $fillable = ['nombre', 'area_id'];
 
-    public function admins()
+    public function area()
     {
-        return $this->hasMany('App\Models\Admin');
+        return $this->belongsTo(Area::class, 'area_id', 'area_id');
     }
 
-    // Relación muchos a muchos con documentos ISO
-    public function documentosIso()
+    // Si quieres saber qué documentos ISO tiene este proceso:
+    public function documentos()
     {
-        return $this->belongsToMany(DocumentoIso::class, 'documento_iso_role', 'role_id', 'documento_iso_id');
-    }
-
-    // Helper para manejar los permisos en array
-    public function getPermissionsArrayAttribute()
-    {
-        return json_decode($this->permissions, true) ?? [];
+        return $this->hasMany(DocumentoIso::class, 'process_id', 'process_id');
     }
 }
