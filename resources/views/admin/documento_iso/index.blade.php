@@ -14,15 +14,26 @@
   </ul>
 </div>
 
+@php
+    $rolNombre = strtolower(auth()->user()->role->name ?? '');
+    $esSuperadmin = !auth()->user()->role_id;
+    // Solo pueden crear Asistentes/Analistas de área o Superadmin
+    $puedeCrear = $esSuperadmin ||
+        (str_contains($rolNombre, 'asistente') || str_contains($rolNombre, 'analista'));
+@endphp
+
 <div class="row">
   <div class="col-md-12">
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span class="card-title">Lista de Documentos ISO</span>
-        <a href="{{ route('admin.documento_iso.create') }}" class="btn btn-primary btn-sm">
-          <i class="fas fa-plus"></i> Nuevo Documento
-        </a>
+        @if($puedeCrear)
+          <a href="{{ route('admin.documento_iso.create') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Nuevo Documento
+          </a>
+        @endif
       </div>
+
       <div class="card-body">
         @if($documentos->isEmpty())
           <h5 class="text-center">No se encontraron documentos.</h5>
@@ -49,31 +60,51 @@
                 @foreach($documentos as $doc)
                   <tr>
                     <td>{{ $doc->id }}</td>
-                    <td>{{ $doc->doc_Id ?? '-' }}</td>
+                    <td>{{ $doc->doc_id ?? '-' }}</td>
                     <td>{{ $doc->process->area->nombre ?? '-' }}</td>
                     <td>{{ $doc->process->nombre ?? '-' }}</td>
                     <td>{{ $doc->doctype->nombre ?? '-' }}</td>
-                    <td>{{ $doc->estado }}</td>
-                    <td>{{ $doc->responsable }}</td>
+                    {{-- Estado con badge --}}
+                    <td>
+                      @php $estado = strtoupper($doc->estado); @endphp
+                      @if($estado == 'VIGENTE')
+                        <span class="badge badge-success">VIGENTE</span>
+                      @elseif($estado == 'EN REVISIÓN')
+                        <span class="badge badge-primary">EN REVISIÓN</span>
+                      @elseif($estado == 'FALTA')
+                        <span class="badge badge-warning">FALTA</span>
+                      @elseif($estado == 'OBSOLETO')
+                        <span class="badge badge-secondary">OBSOLETO</span>
+                      @else
+                        <span class="badge badge-light">{{ $estado }}</span>
+                      @endif
+                    </td>
+                    <td>
+                      {{ $doc->responsableAdmin
+                          ? $doc->responsableAdmin->first_name . ' ' . $doc->responsableAdmin->last_name
+                          : '-' }}
+                    </td>
+                    {{-- Ver archivo --}}
                     <td>
                       @if($doc->archivo)
-                        <a href="{{ asset('uploads/documentos_iso/'.$doc->archivo) }}" target="_blank" class="btn btn-info btn-sm">
+                        <a href="{{ asset('uploads/documentos_iso/'.$doc->archivo) }}" target="_blank" class="btn btn-sm btn-outline-info">
                           <i class="fas fa-file"></i> Ver
                         </a>
                       @else
                         <span class="text-muted">-</span>
                       @endif
                     </td>
-                    <td>{{ $doc->fecha_revision }}</td>
-                    <td>{{ $doc->fecha_aprobacion }}</td>
-                    <td>{{ $doc->aprobado_por }}</td>
-                    <td>
-                      <a href="{{ route('admin.documento_iso.edit', $doc->id) }}" class="btn btn-secondary btn-sm" title="Editar">
-                        <i class="fas fa-edit"></i>
+                    <td>{{ $doc->fecha_revision ?? '-' }}</td>
+                    <td>{{ $doc->fecha_aprobacion ?? '-' }}</td>
+                    <td>{{ $doc->aprobador ? $doc->aprobador->first_name . ' ' . $doc->aprobador->last_name : '-' }}</td>
+                    {{-- Acciones --}}
+                    <td class="d-flex">
+                      <a href="{{ route('admin.documento_iso.edit', $doc->id) }}" class="btn btn-sm btn-outline-secondary mr-1" title="Ver / Editar">
+                        <i class="fas fa-eye"></i>
                       </a>
-                      <form action="{{ route('admin.documento_iso.delete', $doc->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar documento?')">
+                      <form action="{{ route('admin.documento_iso.delete', $doc->id) }}" method="POST" onsubmit="return confirm('¿Está seguro que desea eliminar este documento?')" style="display:inline;">
                         @csrf
-                        <button type="submit" class="btn btn-danger btn-sm" title="Eliminar">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
                           <i class="fas fa-trash"></i>
                         </button>
                       </form>

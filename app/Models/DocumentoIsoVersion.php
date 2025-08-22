@@ -14,10 +14,36 @@ class DocumentoIsoVersion extends Model
 
     public $timestamps = false; // Usamos created_at manual
 
+    public function user()
+    {
+        return $this->belongsTo(Admin::class, 'user_id');
+    }
+
+
+
     public function documento()
     {
         return $this->belongsTo(DocumentoIso::class, 'documento_iso_id');
     }
+    protected static function boot()
+{
+    parent::boot();
+
+    // Evita que accidentalmente intente guardar 'updated_at'
+    static::saving(function ($model) {
+        unset($model->updated_at);
+    });
+
+    static::creating(function ($model) {
+        unset($model->updated_at);
+    });
+
+    static::updating(function ($model) {
+        unset($model->updated_at);
+    });
+    
+}
+
 }
 
 ?>

@@ -13,10 +13,10 @@ class Admin extends Authenticatable
         'role_id', 'username', 'email', 'password', 'first_name', 'last_name', 'image', 'status'
     ];
 
-    // Relación antigua (un solo rol, opcional mantener por compatibilidad)
     public function role() {
-        return $this->belongsTo('App\Models\Role');
-    }
+    return $this->belongsTo(Role::class, 'role_id');
+}
+
 
     // Nueva relación: muchos a muchos
    public function roles()

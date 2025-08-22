@@ -2,9 +2,6 @@
 
 @section('content')
 
-
-
-
 <div class="page-header">
   <h4 class="page-title">Nuevo Documento ISO</h4>
   <ul class="breadcrumbs">
@@ -43,7 +40,7 @@
           {{-- ID Referencia ISO (doc_Id) --}}
           <div class="form-group col-md-6">
             <label>ID referencia ISO (doc_Id)</label>
-            <input type="text" name="doc_Id" class="form-control" value="{{ old('doc_Id') }}">
+            <input type="text" name="doc_id" class="form-control" value="{{ old('doc_id') }}">
           </div>
 
           {{-- Tipo de Documento --}}
@@ -57,56 +54,55 @@
             </select>
           </div>
 
-          {{-- Año/Mes si es Políticas --}}
-          <div id="politicas_extra" class="col-md-12" style="display:none;">
+          {{-- Año/Mes si es registro --}}
+          <div id="registro_extra" class="col-md-12" style="display:none;">
             <div class="form-group col-md-6">
               <label>Año</label>
               <input type="text" name="anio" class="form-control" value="{{ old('anio') }}">
             </div>
             <div class="form-group col-md-6">
               <label>Mes</label>
-              <input type="text" name="mes" class="form-control" value="{{ old('mes') }}">
+              <select name="mes" class="form-control">
+                <option value="" disabled selected>Seleccione un mes</option>
+                @foreach([
+                  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                ] as $mes)
+                  <option value="{{ $mes }}" {{ old('mes') == $mes ? 'selected' : '' }}>{{ $mes }}</option>
+                @endforeach
+              </select>
             </div>
           </div>
 
           {{-- Estado --}}
           @php
-  // Si es superadmin no tiene rol_id (puede todo)
-  $isSuperAdmin = empty($admin->role_id);
+            $isSuperAdmin = empty($admin->role_id);
+            $rolNombre = strtolower($admin->role->name ?? '');
+            $isJefe = (strpos($rolNombre, 'coordinador') !== false || strpos($rolNombre, 'jefe') !== false);
+          @endphp
 
-  // Verifica si es jefe o coordinador (rolActual puede ser null si es superadmin)
-  $rolNombre = $rolActual ? strtolower($rolActual->name) : '';
-  $isJefe = (strpos($rolNombre, 'coordinador') !== false || strpos($rolNombre, 'jefe') !== false);
-@endphp
+          <div class="form-group col-md-6">
+            <label>Estado</label>
+            <select name="estado" class="form-control" required>
+              <option value="" disabled {{ old('estado') ? '' : 'selected' }}>Seleccione estado</option>
+              @if ($isSuperAdmin || $isJefe)
+                  <option value="VIGENTE" {{ old('estado') == 'VIGENTE' ? 'selected' : '' }}>VIGENTE</option>
+                  <option value="EN REVISIÓN" {{ old('estado') == 'EN REVISIÓN' ? 'selected' : '' }}>EN REVISIÓN</option>
+                  <option value="FALTA" {{ old('estado') == 'FALTA' ? 'selected' : '' }}>FALTA</option>
+                  <option value="OBSOLETO" {{ old('estado') == 'OBSOLETO' ? 'selected' : '' }}>OBSOLETO</option>
+              @else
+                  <option value="EN REVISIÓN" {{ old('estado') == 'EN REVISIÓN' ? 'selected' : '' }}>EN REVISIÓN</option>
+              @endif
+            </select>
+          </div>
 
-<div class="form-group col-md-6">
-  <label>Estado</label>
-  <select name="estado" class="form-control" required>
-    <option value="" disabled {{ old('estado') ? '' : 'selected' }}>Seleccione estado</option>
-    @if ($isSuperAdmin || $isJefe)
-        <option value="VIGENTE" {{ old('estado') == 'VIGENTE' ? 'selected' : '' }}>VIGENTE</option>
-        <option value="EN REVISIÓN" {{ old('estado') == 'EN REVISIÓN' ? 'selected' : '' }}>EN REVISIÓN</option>
-        <option value="FALTA" {{ old('estado') == 'FALTA' ? 'selected' : '' }}>FALTA</option>
-        <option value="OBSOLETO" {{ old('estado') == 'OBSOLETO' ? 'selected' : '' }}>OBSOLETO</option>
-    @else
-        <option value="EN REVISIÓN" {{ old('estado') == 'EN REVISIÓN' ? 'selected' : '' }}>EN REVISIÓN</option>
-    @endif
-  </select>
-</div>
-
-
-
-
-
-
-         {{-- Responsable (combo dinámico) --}}
-        <div class="form-group col-md-6">
-          <label>Responsable</label>
-          <select name="responsable" class="form-control" id="responsable_id" required>
-            <option value="" disabled selected>Seleccione responsable</option>
-          </select>
-        </div>
-
+          {{-- Responsable (solo el usuario logueado) --}}
+          <div class="form-group col-md-4">
+            <label>Responsable</label>
+            <input type="text" class="form-control"
+              value="{{ $admin->first_name }} {{ $admin->last_name }} ({{ $admin->role->name }})" readonly>
+            <input type="hidden" name="responsable" value="{{ $admin->id }}">
+          </div>
 
           {{-- Área --}}
           <div class="form-group col-md-6">
@@ -114,12 +110,12 @@
             <select name="area_id" class="form-control" required id="area_id">
               <option value="" disabled selected>Seleccione un área</option>
               @foreach($areas as $area)
-                <option value="{{ $area->area_id }}">{{ $area->nombre }}</option>
+                <option value="{{ $area->area_id }}" data-nombre="{{ $area->nombre }}">{{ $area->nombre }}</option>
               @endforeach
             </select>
           </div>
 
-          {{-- Proceso: carga dinámica --}}
+          {{-- Proceso --}}
           <div class="form-group col-md-6">
             <label>Proceso</label>
             <select name="process_id" class="form-control" required id="process_id">
@@ -140,19 +136,15 @@
             <input type="text" name="fecha_revision" class="form-control" value="" disabled>
           </div>
 
+          {{-- NO mostrar el campo Aprobado por en la creación --}}
+
+
+          
           {{-- Fecha Aprobación --}}
           <div class="form-group col-md-6">
             <label>Fecha Aprobación</label>
             <input type="text" name="fecha_aprobacion" id="fecha_aprobacion" class="form-control" readonly style="background:#fff;">
           </div>
-
-         <div class="form-group col-md-6">
-          <label>Aprobado por</label>
-          <select name="aprobado_por" class="form-control" id="aprobado_por_id" required>
-            <option value="" disabled selected>Seleccione aprobador</option>
-          </select>
-        </div>
-
 
 
           {{-- Modificaciones (desactivado) --}}
@@ -180,7 +172,6 @@
               No hay actividad registrada.
             </div>
           </div>
-
         </div>
 
         <div class="card-footer text-right">
@@ -192,7 +183,3 @@
   </div>
 </div>
 @endsection
-
-
-
-

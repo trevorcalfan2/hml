@@ -233,10 +233,11 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:admin', 'checkstatus']
 
 
 
-    //ultimas rutas agregadas gestiona combobox en crear documento iso
-Route::get('/procesos-por-area/{area}', 'Admin\DocumentoIsoController@procesosPorArea');
-Route::get('/responsables-por-area/{area}', 'Admin\DocumentoIsoController@responsablesPorArea');
-Route::get('/admin/aprobadores-por-area/{area}', 'Admin\DocumentoIsoController@aprobadoresPorArea');
+        //ultimas rutas agregadas gestiona combobox en crear documento iso
+    Route::get('/procesos-por-area/{area}', 'Admin\DocumentoIsoController@procesosPorArea');
+    Route::get('/responsables-por-area/{areaNombre}', 'Admin\DocumentoIsoController@responsablesPorArea');
+    Route::get('/aprobadores-por-area/{areaNombre}', 'Admin\DocumentoIsoController@aprobadoresPorArea');
+    Route::post('/documentos-iso/{id}/aprobar', [DocumentoIsoController::class, 'approve'])->name('admin.documento_iso.approve');
 
 
 

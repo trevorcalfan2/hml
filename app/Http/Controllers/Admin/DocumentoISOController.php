@@ -19,80 +19,108 @@ class DocumentoIsoController extends Controller
     /**
      * Listado de documentos ISO
      */
-    public function index()
-    {
-        $admin = Auth::guard('admin')->user();
+   public function index()
+{
+    $admin = Auth::guard('admin')->user();
 
-        if (!$admin || !$admin->role_id) {
-            // Admin sin rol: ve todos los documentos
-            $documentos = DocumentoIso::with(['process.area', 'doctype'])
-                ->orderBy('id', 'DESC')
-                ->get();
+    if (!$admin || !$admin->role_id) {
+        // Superadmin ve todos los documentos
+        $documentos = DocumentoIso::with(['process.area', 'doctype', 'responsableAdmin', 'aprobador'])
+            ->orderBy('id', 'DESC')
+            ->get();
+    } else {
+        // 1. Obtener el nombre del rol (ej: "Coordinador Gestión Humana")
+        $rolNombre = strtolower($admin->role->name); // "coordinador gestión humana"
+
+        // 2. Extraer nombre de área (ej: "gestión humana")
+        // Busca la primera palabra clave ("gestión", etc.) y corta el prefijo
+        $areas = Area::all();
+        $areaCoincidente = $areas->first(function ($area) use ($rolNombre) {
+            return str_contains($rolNombre, strtolower($area->nombre));
+        });
+
+        if (!$areaCoincidente) {
+            // No tiene área asignada, devuelve vacío
+            $documentos = collect();
         } else {
-            // Admin con rol: ve solo docs de áreas asociadas a su rol
-            $roleId = $admin->role_id;
-            $documentos = DocumentoIso::whereHas('process.area.roles', function($q) use ($roleId) {
-                    $q->where('roles.id', $roleId);
-                })
-                ->with(['process.area', 'doctype'])
+            // 3. Obtener procesos de esa área
+            $procesos = Process::where('area_id', $areaCoincidente->area_id)->pluck('process_id');
+
+            // 4. Documentos solo de esos procesos
+            $documentos = DocumentoIso::whereIn('process_id', $procesos)
+                ->with(['process.area', 'doctype', 'responsableAdmin', 'aprobador'])
                 ->orderBy('id', 'DESC')
                 ->get();
         }
-
-        return view('admin.documento_iso.index', compact('documentos'));
     }
+
+    return view('admin.documento_iso.index', compact('documentos'));
+}
+
+
+
 
     /**
      * Formulario crear
      */
+    
+
 public function create()
 {
     $admin = Auth::guard('admin')->user();
 
-    // Obtener rol actual del admin
-    $rolActual = null;
-    if ($admin->role_id) {
-        $rolActual = \App\Models\Role::find($admin->role_id);
-    }
-
-    // Listar aprobadores si es superadmin o coordinador/jefe, si no, vacío (opcional según tu lógica)
+    // Filtrar áreas/procesos según el rol (esto ya lo tienes bien)
     if (!$admin->role_id) {
-        $aprobadores = \App\Models\Admin::with('role.areas')->get();
+        $areas = Area::all();
+        $procesos = Process::with('area')->get();
     } else {
-        $aprobadores = collect([$admin->load('role.areas')]);
+        $rolNombre = strtolower($admin->role->name);
+        $areasAll = Area::all();
+        $areaCoincidente = $areasAll->first(function ($area) use ($rolNombre) {
+            return str_contains($rolNombre, strtolower($area->nombre));
+        });
+
+        if ($areaCoincidente) {
+            $areas = collect([$areaCoincidente]);
+            $procesos = Process::where('area_id', $areaCoincidente->area_id)->with('area')->get();
+        } else {
+            $areas = collect();
+            $procesos = collect();
+        }
     }
 
-    $data['areas'] = Area::all();
-    $data['procesos'] = Process::with('area')->get();
-    $data['doctypes'] = Doctype::all();
-    $data['aprobadores'] = $aprobadores;
-    $data['admin'] = $admin;
-    $data['rolActual'] = $rolActual;
+    // Solo necesitas esto
+    $doctypes = Doctype::all();
 
-    return view('admin.documento_iso.create', $data);
+    return view('admin.documento_iso.create', [
+        'areas' => $areas,
+        'procesos' => $procesos,
+        'doctypes' => $doctypes,
+        'admin' => $admin,
+    ]);
 }
 
 
-public function responsablesPorArea($areaId)
+public function responsablesPorArea($areaNombre)
 {
-    // Obtén el área
-    $area = \App\Models\Area::find($areaId);
-    if (!$area) {
-        return response()->json([]);
+    $areaNombre = urldecode($areaNombre);
+
+    // Variaciones de posibles nombres de rol
+    $nombresRoles = [
+        'Coordinador ' . $areaNombre,
+        'Jefe ' . $areaNombre,
+        'Coordinador de ' . $areaNombre,
+        'Jefe de ' . $areaNombre,
+    ];
+
+    $roles = \App\Models\Role::whereIn('name', $nombresRoles)->pluck('id');
+    if ($roles->isEmpty()) {
+        return response()->json([]); // Retorna vacío si no hay
     }
 
-    // Busca roles que contengan 'coordinador' o 'jefe' y el nombre del área
-    $roles = \App\Models\Role::where(function($q) use ($area) {
-        $q->where('name', 'like', '%coordinador%')
-          ->orWhere('name', 'like', '%jefe%');
-    })
-    ->where('name', 'like', '%' . $area->nombre . '%')
-    ->pluck('id');
+    $responsables = \App\Models\Admin::whereIn('role_id', $roles)
+        ->get(['id', 'first_name', 'last_name', 'role_id']);
 
-    // Busca admins que tengan uno de esos roles
-    $responsables = \App\Models\Admin::whereIn('role_id', $roles)->get(['id', 'first_name', 'last_name', 'role_id']);
-
-    // Añade el nombre del rol para mostrar en el combo
     foreach ($responsables as $admin) {
         $admin->role_name = optional($admin->role)->name;
     }
@@ -100,28 +128,29 @@ public function responsablesPorArea($areaId)
     return response()->json($responsables);
 }
 
-
-
-
-public function aprobadoresPorArea($areaId)
+public function aprobadoresPorArea($areaNombre)
 {
-    // Buscar todos los admins con rol de 'jefe' o 'coordinador' Y que pertenezcan al área seleccionada
-    $aprobadores = \App\Models\Admin::whereHas('role', function($q) use ($areaId) {
-        $q->where(function($r) {
-            $r->where('name', 'like', '%coordinador%')
-              ->orWhere('name', 'like', '%jefe%');
-        })
-        ->whereHas('areas', function($a) use ($areaId) {
-            $a->where('area.area_id', $areaId);
-        });
-    })
-    ->get(['id', 'first_name', 'last_name', 'role_id']);
+    $areaNombre = urldecode($areaNombre);
 
-    // Adjunta el nombre del rol al resultado
-    $aprobadores->transform(function($item) {
-        $item->role_name = $item->role ? $item->role->name : '';
-        return $item;
-    });
+    // Variaciones de posibles nombres de rol
+    $nombresRoles = [
+        'Coordinador ' . $areaNombre,
+        'Jefe ' . $areaNombre,
+        'Coordinador de ' . $areaNombre,
+        'Jefe de ' . $areaNombre,
+    ];
+
+    $roles = \App\Models\Role::whereIn('name', $nombresRoles)->pluck('id');
+    if ($roles->isEmpty()) {
+        return response()->json([]); // Retorna vacío si no hay
+    }
+
+    $aprobadores = \App\Models\Admin::whereIn('role_id', $roles)
+        ->get(['id', 'first_name', 'last_name', 'role_id']);
+
+    foreach ($aprobadores as $admin) {
+        $admin->role_name = optional($admin->role)->name;
+    }
 
     return response()->json($aprobadores);
 }
@@ -140,100 +169,124 @@ public function aprobadoresPorArea($areaId)
 
 
 
-
-
-
-
-
-
-
+    /**
+     * AJAX: Listar procesos según área
+     */
+    public function procesosPorArea($areaId)
+    {
+        $procesos = \App\Models\Process::where('area_id', $areaId)
+            ->get(['process_id', 'nombre']);
+        return response()->json($procesos);
+    }
 
     /**
      * Guardar nuevo documento
      */
-  public function store(Request $request)
-{
-    $admin = Auth::guard('admin')->user();
-    $rol = null;
-    if ($admin->role_id) {
-        $rol = \App\Models\Role::find($admin->role_id);
-    }
+    public function store(Request $request)
+    {
+        $admin = Auth::guard('admin')->user();
 
-    $rolNombre = $rol ? strtolower($rol->name) : '';
-    $isJefe = (strpos($rolNombre, 'coordinador') !== false || strpos($rolNombre, 'jefe') !== false);
-    $isSuperAdmin = empty($admin->role_id);
+        // Validar proceso pertenece a su área/rol (importante)
+        if ($admin->role_id) {
+            $rolNombre = strtolower($admin->role->name);
+            $areas = Area::all();
+            $areaCoincidente = $areas->first(function ($area) use ($rolNombre) {
+                return str_contains($rolNombre, strtolower($area->nombre));
+            });
 
-    $rules = [
-        'doc_Id' => 'nullable|string|max:255',
-        'estado' => 'required|string|max:255',
-        'responsable' => 'required|string|max:255',
-        'process_id' => 'required|exists:process,process_id',
-        'doctype_id' => 'required|exists:doctype,doctype_id',
-        'archivo' => 'required|file|mimes:pdf,doc,docx',
-        'fecha_aprobacion' => 'nullable|date',
-        'aprobado_por' => 'required|string|max:255',
-        'anio' => 'nullable|integer',
-        'mes' => 'nullable|string|max:25',
-        'comentarios' => 'nullable|string|max:1000',
-    ];
+            if ($areaCoincidente) {
+                $procesoPermitido = Process::where('process_id', $request->process_id)
+                    ->where('area_id', $areaCoincidente->area_id)
+                    ->exists();
+                if (!$procesoPermitido) {
+                    return back()->withErrors(['process_id' => 'No tiene permisos sobre este proceso'])->withInput();
+                }
+            } else {
+                return back()->withErrors(['area_id' => 'No tiene área asignada'])->withInput();
+            }
+        }
 
-    $validator = Validator::make($request->all(), $rules);
+        // Reglas de validación
+        $rules = [
+            'doc_id'           => 'nullable|string|max:255',
+            'estado'           => 'required|string|max:255',
+            'responsable'      => 'required|string|max:255',
+            'process_id'       => 'required|exists:process,process_id',
+            'doctype_id'       => 'required|exists:doctype,doctype_id',
+            'archivo'          => 'required|file|mimes:pdf,doc,docx',
+            'fecha_aprobacion' => 'nullable|date',
+            'anio'             => 'nullable|integer',
+            'mes'              => 'nullable|string|max:25',
+            'comentarios'      => 'nullable|string|max:1000',
+        ];
 
-    if ($validator->fails()) {
-        return back()->withErrors($validator)->withInput();
-    }
+        $validator = Validator::make($request->all(), $rules);
 
-    $data = $request->all();
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
 
-    // Si NO es superadmin ni jefe/coordinador, fuerza el estado a EN REVISIÓN
-    if (!$isSuperAdmin && !$isJefe) {
-        $data['estado'] = 'EN REVISIÓN';
-    }
+        $data = $request->all();
 
-    // Subida de archivo
-    if ($request->hasFile('archivo')) {
-        $filename = time() . '_' . $request->file('archivo')->getClientOriginalName();
-        $request->file('archivo')->move(public_path('uploads/documentos_iso'), $filename);
-        $data['archivo'] = $filename;
-    }
+        // Agrega el usuario que crea el documento
+        $data['created_by'] = $admin->id;
 
-    // Inicializar campos de historial y modificaciones
-    $data['historial_versiones'] = '';
-    $data['modificaciones'] = '';
-    $data['fecha_revision'] = null;
+        // Solo jefes/coordinadores/superadmin pueden dejar estado como no "EN REVISIÓN"
+        $rol = $admin->role;
+        $rolNombre = $rol ? strtolower($rol->name) : '';
+        $isJefe = $rol && (str_contains($rolNombre, 'coordinador') || str_contains($rolNombre, 'jefe'));
+        $isSuperAdmin = empty($admin->role_id);
 
-    $documento = DocumentoIso::create($data);
+        if (!$isSuperAdmin && !$isJefe) {
+            $data['estado'] = 'EN REVISIÓN';
+        }
 
-    // Guardar versión inicial
-    if (!empty($data['archivo'])) {
-        DocumentoIsoVersion::create([
+        // Subida del archivo principal
+        if ($request->hasFile('archivo')) {
+            $filename = time() . '_' . $request->file('archivo')->getClientOriginalName();
+            $request->file('archivo')->move(public_path('uploads/documentos_iso'), $filename);
+            $data['archivo'] = $filename;
+        }
+
+        // Inicialización de campos ISO
+        $data['historial_versiones'] = '';
+        $data['modificaciones'] = '';
+        $data['fecha_revision'] = null;
+
+        // Crear documento
+        $documento = DocumentoIso::create($data);
+
+        // Crear versión inicial
+        if (!empty($data['archivo'])) {
+            DocumentoIsoVersion::create([
+                'documento_iso_id' => $documento->id,
+                'archivo'          => $data['archivo'],
+                'comentario'       => $request->input('comentarios', 'Versión inicial'),
+                'user_id'          => Auth::id() ?? 1,
+                'created_at'       => $data['fecha_aprobacion'] ?? now(),
+            ]);
+        }
+
+        // Log de creación
+        DocumentoIsoLog::create([
             'documento_iso_id' => $documento->id,
-            'archivo' => $data['archivo'],
-            'comentario' => $request->input('comentarios', 'Versión inicial'),
-            'user_id' => Auth::id() ?? 1,
-            'created_at' => $data['fecha_aprobacion'] ?? now(),
+            'user_id'          => Auth::id() ?? 1,
+            'accion'           => 'Creación',
+            'descripcion'      => 'Documento creado',
+            'created_at'       => now(),
         ]);
+
+        Session::flash('success', 'Documento ISO creado correctamente');
+        return redirect()->route('admin.documento_iso.index');
     }
 
-    // Log de auditoría
-    DocumentoIsoLog::create([
-        'documento_iso_id' => $documento->id,
-        'user_id' => Auth::id() ?? 1,
-        'accion' => 'Creación',
-        'descripcion' => 'Documento creado',
-        'created_at' => now(),
-    ]);
 
-    Session::flash('success', 'Documento ISO creado correctamente');
-    return redirect()->route('admin.documento_iso.index');
-}
 
-    /**
-     * Formulario editar
-     */
+
+
     public function edit($id)
     {
-        $documento = DocumentoIso::with(['versiones', 'logs'])->findOrFail($id);
+        $documento = DocumentoIso::with(['versiones.user', 'logs'])->findOrFail($id);
         $areas = Area::all();
         $procesos = Process::with('area')->get();
         $doctypes = Doctype::all();
@@ -246,40 +299,121 @@ public function aprobadoresPorArea($areaId)
             $aprobadores = collect([$admin->load('role.areas')]);
         }
 
+
+        \Log::info('Datos enviados a edit:', [
+    'documento' => $documento->toArray(),
+    'areas' => $areas->toArray(),
+    'procesos' => $procesos->toArray(),
+    'doctypes' => $doctypes->toArray(),
+    'aprobadores' => $aprobadores->toArray(),
+    'admin' => $admin ? $admin->toArray() : null,
+]);
+
         return view('admin.documento_iso.edit', compact('documento', 'areas', 'procesos', 'doctypes', 'aprobadores'));
     }
 
     /**
      * Actualizar documento
      */
-    public function update(Request $request, $id)
-    {
-        $documento = DocumentoIso::findOrFail($id);
+    public function approve($id, Request $request)
+{
+    $documento = DocumentoIso::findOrFail($id);
 
-        $rules = [
-            'doc_Id'           => 'nullable|string|max:255',
-            'estado'           => 'required|string|max:255',
-            'responsable'      => 'required|string|max:255',
-            'process_id'       => 'required|exists:process,process_id',
-            'doctype_id'       => 'required|exists:doctype,doctype_id',
-            'archivo'          => 'nullable|file|mimes:pdf,doc,docx',
-            'fecha_revision'   => 'nullable|date',
-            'fecha_aprobacion' => 'nullable|date',
-            'aprobado_por'     => 'required|string|max:255',
-            'anio'             => 'nullable|integer',
-            'mes'              => 'nullable|string',
-            'comentarios'      => 'nullable|string|max:1000',
-        ];
+    $admin = Auth::guard('admin')->user();
+    $rol = $admin->role;
+    $rolNombre = $rol ? strtolower($rol->name) : '';
 
-        $validator = Validator::make($request->all(), $rules);
+    $isJefe = $rol && (str_contains($rolNombre, 'coordinador') || str_contains($rolNombre, 'jefe'));
+    $isSuperAdmin = empty($admin->role_id);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
+    if (!$isSuperAdmin && !$isJefe) {
+        Session::flash('error', 'No tienes permisos para aprobar este documento.');
+        return back();
+    }
 
-        $data = $request->all();
+    // Marcar aprobación    
+    $documento->estado = 'APROBADO';
+    $documento->aprobado_por = $admin->first_name . ' ' . $admin->last_name;
+    $documento->fecha_aprobacion = now();
+    $documento->save();
 
-        // Actualización de archivo y registro de nueva versión
+    // Registrar versión aprobada (si no existe ya una igual)
+    DocumentoIsoVersion::create([
+        'documento_iso_id' => $documento->id,
+        'archivo' => $documento->archivo,
+        'comentario' => 'Aprobación oficial',
+        'user_id' => $admin->id,
+        'created_at' => now(),
+    ]);
+
+    // Log de aprobación
+    DocumentoIsoLog::create([
+        'documento_iso_id' => $documento->id,
+        'user_id' => $admin->id,
+        'accion' => 'Aprobación',
+        'descripcion' => 'Documento aprobado por ' . $documento->aprobado_por,
+        'created_at' => now(),
+    ]);
+
+    Session::flash('success', 'Documento aprobado correctamente.');
+    return back();
+}
+
+  public function update(Request $request, $id)
+{
+    $documento = DocumentoIso::findOrFail($id);
+
+    $admin = Auth::guard('admin')->user();
+    $rol = $admin->role;
+    $rolNombre = $rol ? strtolower($rol->name) : '';
+    $esJefe = $rol && (str_contains($rolNombre, 'coordinador') || str_contains($rolNombre, 'jefe'));
+    $esResponsable = $admin->id == $documento->responsable;
+
+    // BLOQUEO según estado y rol
+    if (in_array($documento->estado, ['APROBADO', 'VIGENTE'])) {
+        return back()->withErrors(['error' => 'No puedes modificar un documento aprobado o vigente.'])->withInput();
+    }
+    // Solo el responsable puede editar si OBSERVADO
+    if ($documento->estado === 'OBSERVADO' && !$esResponsable) {
+        return back()->withErrors(['error' => 'Solo el responsable puede subir nueva versión en este estado.'])->withInput();
+    }
+    // Solo el jefe puede editar si EN REVISIÓN
+    if ($documento->estado === 'EN REVISIÓN' && !$esJefe) {
+        return back()->withErrors(['error' => 'Solo el jefe o coordinador puede revisar este documento.'])->withInput();
+    }
+
+    // Reglas de validación
+    $rules = [
+        'doc_id'           => 'nullable|string|max:255',
+        'estado'           => 'required|string|max:255',
+        'responsable'      => 'required|string|max:255',
+        'process_id'       => 'required|exists:process,process_id',
+        'doctype_id'       => 'required|exists:doctype,doctype_id',
+        'archivo'          => 'nullable|file|mimes:pdf,doc,docx',
+        'fecha_revision'   => 'nullable|date',
+        'fecha_aprobacion' => 'nullable|date',
+        'anio'             => 'nullable|integer',
+        'mes'              => 'nullable|string',
+        'comentarios'      => 'nullable|string|max:1000',
+        'modificaciones'   => 'nullable|string|max:1000',
+        'observaciones'    => 'nullable|string|max:1000',
+    ];
+
+    // Observaciones solo obligatorias para jefe cuando pasa a OBSERVADO
+    if ($esJefe && $request->estado === 'OBSERVADO') {
+        $rules['observaciones'] = 'required|string|max:1000';
+    }
+
+    $validator = Validator::make($request->all(), $rules);
+    if ($validator->fails()) {
+        return back()->withErrors($validator)->withInput();
+    }
+
+    $data = $request->all();
+
+    // ------ 1. RESPONSABLE SUBE NUEVA VERSIÓN (cuando estado = OBSERVADO) ------
+    if ($documento->estado === 'OBSERVADO' && $esResponsable) {
+        // Permitir solo subir archivo y comentarios de versión
         if ($request->hasFile('archivo')) {
             if ($documento->archivo && file_exists(public_path('uploads/documentos_iso/' . $documento->archivo))) {
                 unlink(public_path('uploads/documentos_iso/' . $documento->archivo));
@@ -288,30 +422,75 @@ public function aprobadoresPorArea($areaId)
             $request->file('archivo')->move(public_path('uploads/documentos_iso'), $filename);
             $data['archivo'] = $filename;
 
-            // Guardar nueva versión
             DocumentoIsoVersion::create([
                 'documento_iso_id' => $documento->id,
                 'archivo' => $filename,
                 'comentario' => $request->input('modificaciones', 'Nueva versión'),
-                'user_id' => Auth::id() ?? 1,
-                'created_at' => $request->input('fecha_aprobacion', now()),
+                'user_id' => $admin->id,
+                'created_at' => now(),
             ]);
         }
+        // Después de subir nueva versión, cambia estado a EN REVISIÓN
+        $data['estado'] = 'EN REVISIÓN';
+        // Limpia campos de aprobación
+        $data['aprobado_por'] = null;
+        $data['fecha_aprobacion'] = null;
 
         $documento->update($data);
 
-        // Log de auditoría
         DocumentoIsoLog::create([
             'documento_iso_id' => $documento->id,
-            'user_id' => Auth::id() ?? 1,
+            'user_id' => $admin->id,
             'accion' => 'Edición',
-            'descripcion' => 'Documento actualizado',
+            'descripcion' => 'Nueva versión enviada para revisión',
+            'created_at' => now(),
+        ]);
+        Session::flash('success', 'Nueva versión enviada para revisión.');
+        return redirect()->route('admin.documento_iso.index');
+    }
+
+    // ------ 2. JEFE/COORDINADOR AGREGA OBSERVACIÓN ------
+    if ($esJefe && $documento->estado === 'EN REVISIÓN' && $request->estado === 'OBSERVADO') {
+        $documento->estado = 'OBSERVADO';
+        $documento->save();
+
+        DocumentoIsoLog::create([
+            'documento_iso_id' => $documento->id,
+            'user_id' => $admin->id,
+            'accion' => 'Observación',
+            'descripcion' => $request->input('observaciones'),
             'created_at' => now(),
         ]);
 
-        Session::flash('success', 'Documento ISO actualizado correctamente');
+        Session::flash('success', 'Observaciones enviadas. El documento pasa a estado OBSERVADO.');
         return redirect()->route('admin.documento_iso.index');
     }
+
+    // ------ 3. JEFE/COORDINADOR APRUEBA (pasa a VIGENTE) ------
+    if ($esJefe && $documento->estado === 'EN REVISIÓN' && $request->estado === 'VIGENTE') {
+        $data['aprobado_por'] = $admin->id;
+        $data['fecha_aprobacion'] = now();
+
+        DocumentoIsoLog::create([
+            'documento_iso_id' => $documento->id,
+            'user_id' => $admin->id,
+            'accion' => 'Aprobación',
+            'descripcion' => 'Documento aprobado',
+            'created_at' => now(),
+        ]);
+
+        $documento->update($data);
+
+        Session::flash('success', 'Documento aprobado y marcado como VIGENTE.');
+        return redirect()->route('admin.documento_iso.index');
+    }
+
+    // Por defecto (no debería llegar aquí, pero por seguridad)
+    return back()->withErrors(['error' => 'No tienes permisos para esta acción.'])->withInput();
+}
+
+
+
 
     /**
      * Eliminar un documento
