@@ -382,7 +382,7 @@ public function aprobadoresPorArea($areaNombre)
         return back()->withErrors(['error' => 'Solo el jefe o coordinador puede revisar este documento.'])->withInput();
     }
 
-    // Reglas de validación
+    // Reglas de validación generales
     $rules = [
         'doc_id'           => 'nullable|string|max:255',
         'estado'           => 'required|string|max:255',
@@ -413,6 +413,13 @@ public function aprobadoresPorArea($areaNombre)
 
     // ------ 1. RESPONSABLE SUBE NUEVA VERSIÓN (cuando estado = OBSERVADO) ------
     if ($documento->estado === 'OBSERVADO' && $esResponsable) {
+        // >>>>> VALIDACIÓN AGREGADA: El comentario es obligatorio para el asistente <<<<<
+        $request->validate([
+            'modificaciones' => 'required|string|max:1000',
+        ], [
+            'modificaciones.required' => 'Debes ingresar un comentario sobre la modificación realizada.',
+        ]);
+
         // Permitir solo subir archivo y comentarios de versión
         if ($request->hasFile('archivo')) {
             if ($documento->archivo && file_exists(public_path('uploads/documentos_iso/' . $documento->archivo))) {
@@ -425,7 +432,7 @@ public function aprobadoresPorArea($areaNombre)
             DocumentoIsoVersion::create([
                 'documento_iso_id' => $documento->id,
                 'archivo' => $filename,
-                'comentario' => $request->input('modificaciones', 'Nueva versión'),
+                'comentario' => $request->input('modificaciones'),
                 'user_id' => $admin->id,
                 'created_at' => now(),
             ]);
@@ -452,6 +459,7 @@ public function aprobadoresPorArea($areaNombre)
     // ------ 2. JEFE/COORDINADOR AGREGA OBSERVACIÓN ------
     if ($esJefe && $documento->estado === 'EN REVISIÓN' && $request->estado === 'OBSERVADO') {
         $documento->estado = 'OBSERVADO';
+        $documento->fecha_revision = now(); // Guardar fecha de revisión
         $documento->save();
 
         DocumentoIsoLog::create([
@@ -470,6 +478,7 @@ public function aprobadoresPorArea($areaNombre)
     if ($esJefe && $documento->estado === 'EN REVISIÓN' && $request->estado === 'VIGENTE') {
         $data['aprobado_por'] = $admin->id;
         $data['fecha_aprobacion'] = now();
+        $data['fecha_revision'] = now();
 
         DocumentoIsoLog::create([
             'documento_iso_id' => $documento->id,
@@ -488,6 +497,8 @@ public function aprobadoresPorArea($areaNombre)
     // Por defecto (no debería llegar aquí, pero por seguridad)
     return back()->withErrors(['error' => 'No tienes permisos para esta acción.'])->withInput();
 }
+
+
 
 
 

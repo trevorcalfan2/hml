@@ -96,7 +96,7 @@
                 </a>
               @endif
               @if($estadoActual === 'OBSERVADO' && $esResponsable)
-                <input type="file" name="archivo" class="form-control mt-2">
+                <input type="file" name="archivo" class="form-control mt-2" required>
               @else
                 <div class="text-muted">No editable en este estado</div>
               @endif
@@ -106,7 +106,8 @@
             @if($estadoActual === 'OBSERVADO' && $esResponsable)
             <div class="form-group col-md-12">
               <label>Comentario de nueva versión</label>
-              <textarea name="modificaciones" class="form-control" rows="2">{{ old('modificaciones') }}</textarea>
+              <textarea name="modificaciones" class="form-control" rows="2" required>{{ old('modificaciones') }}</textarea>
+              <small class="text-danger">* Obligatorio. Explica el cambio realizado.</small>
             </div>
             @endif
 
@@ -137,48 +138,113 @@
   </div>
 </div>
 
+{{-- ================== HISTORIAL DE VERSIONES ================== --}}
 @if($documento->versiones->count())
-  <div class="card mt-4">
-    <div class="card-header"><h5>Historial de Versiones</h5></div>
-    <div class="card-body">
-      <ul class="list-group">
-        @foreach($documento->versiones as $v)
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          <div>
-            <strong>{{ $v->created_at }}</strong>
-            - {{ $v->comentario }}
-            (Subido por
-              @if($v->user)
-                {{ $v->user->first_name }} {{ $v->user->last_name }}
-              @else
-                ID {{ $v->user_id }}
-              @endif
-            )
-          </div>
-          <a href="{{ asset('uploads/documentos_iso/' . $v->archivo) }}" target="_blank" class="btn btn-info btn-sm">Ver Archivo</a>
-        </li>
-        @endforeach
-      </ul>
-    </div>
+<div class="card mt-4">
+  <div class="card-header"><h5>Historial de Versiones</h5></div>
+  <div class="card-body">
+    <table class="table table-bordered table-hover bg-dark text-white">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Comentario</th>
+          <th>Archivo (Ruta)</th>
+          <th>Usuario</th>
+          <th>Acción</th>
+          <th>Ver Archivo</th>
+        </tr>
+      </thead>
+      <tbody>
+  @foreach($documento->versiones as $v)
+    <tr class="{{ $loop->last && in_array($documento->estado, ['VIGENTE','APROBADO']) ? 'tr-vigente' : '' }}">
+      <td><strong>{{ \Carbon\Carbon::parse($v->created_at)->format('Y-m-d H:i') }}</strong></td>
+      <td>{{ $v->comentario }}</td>
+      <td>
+        <code>
+          uploads/documentos_iso/{{ $v->archivo }}
+        </code>
+      </td>
+      <td>
+        {{ $v->user?->first_name }} {{ $v->user?->last_name }}
+        ({{ optional($v->user?->role)->name }}) [ID: {{ $v->user_id }}]
+      </td>
+      <td>
+        @if($loop->last && in_array($documento->estado, ['VIGENTE','APROBADO']))
+          <span class="badge badge-success text-white">VIGENTE</span>
+        @else
+          <span class="badge badge-secondary">Versión</span>
+        @endif
+      </td>
+      <td>
+        <a href="{{ asset('uploads/documentos_iso/' . $v->archivo) }}" target="_blank" class="btn btn-info btn-sm">Ver Archivo</a>
+      </td>
+    </tr>
+  @endforeach
+</tbody>
+
+    </table>
   </div>
+</div>
 @endif
 
+{{-- ================== LOGS / ACTIVIDAD ================== --}}
 @if($documento->logs->count())
-  <div class="card mt-4">
-    <div class="card-header"><h5>Actividad del Documento</h5></div>
-    <div class="card-body">
-      <ul class="list-group">
+<div class="card mt-4">
+  <div class="card-header"><h5>Actividad del Documento (Logs)</h5></div>
+  <div class="card-body">
+    <table class="table table-bordered table-striped table-dark">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Acción</th>
+          <th>Descripción</th>
+          <th>Usuario</th>
+        </tr>
+      </thead>
+      <tbody>
         @foreach($documento->logs as $log)
-          <li class="list-group-item">
-            <strong>{{ $log->created_at }}</strong>: {{ $log->accion }} - {{ $log->descripcion }}
-            @if($log->accion == 'Observación' && $log->descripcion)
-              <br><span class="text-danger">{{ $log->descripcion }}</span>
-            @endif
-          </li>
+          <tr>
+            <td>
+              <strong>{{ \Carbon\Carbon::parse($log->created_at)->format('Y-m-d H:i') }}</strong>
+            </td>
+            <td>
+              @switch($log->accion)
+                @case('Observación')
+                  <span class="badge badge-warning">{{ $log->accion }}</span>
+                  @break
+                @case('Aprobación')
+                  <span class="badge badge-success">{{ $log->accion }}</span>
+                  @break
+                @case('Edición')
+                  <span class="badge badge-info">{{ $log->accion }}</span>
+                  @break
+                @case('Creación')
+                  <span class="badge badge-primary">{{ $log->accion }}</span>
+                  @break
+                @default
+                  <span class="badge badge-secondary">{{ $log->accion }}</span>
+              @endswitch
+            </td>
+            <td>
+              @if($log->accion == 'Observación')
+                <span class="text-warning font-weight-bold">{{ $log->descripcion }}</span>
+              @else
+                {{ $log->descripcion }}
+              @endif
+            </td>
+            <td>
+              @php
+                $logUser = \App\Models\Admin::find($log->user_id);
+              @endphp
+              {{ $logUser?->first_name }} {{ $logUser?->last_name }}
+              ({{ optional($logUser?->role)->name }}) [ID: {{ $log->user_id }}]
+            </td>
+          </tr>
         @endforeach
-      </ul>
-    </div>
+      </tbody>
+    </table>
   </div>
+</div>
 @endif
 
 <!-- JAVASCRIPT para mostrar/ocultar observaciones y evitar guardar sin cambios -->

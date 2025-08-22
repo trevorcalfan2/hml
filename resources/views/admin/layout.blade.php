@@ -23,8 +23,29 @@
         text-align: right;
     }
     </style>
+
+
+
+
+
+
     @endif
     @yield('style')
+<style>
+/* Mejor resaltado para "Versión Vigente" en modo oscuro */
+.tr-vigente {
+    background: #1a3222 !important;  /* Verde oscuro, no molesta */
+    color: #fff !important;
+    border-left: 4px solid #33cc66;
+}
+.tr-vigente td, .tr-vigente th {
+    color: #fff !important;
+}
+.tr-vigente .badge-success {
+    background: #33cc66;
+    color: #111;
+}
+</style>
 
 </head>
 <body data-background-color="dark">

@@ -1,128 +1,101 @@
-FIXEARRRRRRR-R--RR-R-R
-FIXEAR PAR ALA PRXIMA NO FUNCIONE APROBADO POR no sale nada , en responsable no sale responsables del área  y en proceso sale error cargando procesos
+¡Por supuesto!
+Aquí tienes un prompt completo para que lo uses como contexto en otros chats o para darle a cualquier asistente lo que necesita saber de tu proyecto ISO/Laravel, bien estructurado y actualizado:
 
+Prompt/Contexto Completo para el proyecto de Gestión de Documentos ISO en Laravel
 
+Estoy desarrollando un sistema de gestión de documentos ISO usando Laravel.
+El sistema tiene usuarios con distintos roles: asistentes, coordinadores/jefes y administradores.
+El flujo de gestión, permisos y lógica está pensado para cumplir la normativa ISO y asegurar trazabilidad, versionado, validación y aprobación de documentos.
 
+Requisitos y reglas del sistema:
 
+Roles:
 
+Asistente: Crea documentos y sube nuevas versiones si su documento fue “OBSERVADO”.
 
+Coordinador/Jefe: Revisa, aprueba (“VIGENTE”) o hace observaciones (“OBSERVADO”) sobre los documentos.
 
+Administrador: Puede ver todo, actuar como superadmin, no está restringido por áreas.
 
-Sistema de Gestión de Documentos ISO en Laravel
+Estados de los documentos:
+EN REVISIÓN, VIGENTE, OBSERVADO, OBSOLETO, FALTA, APROBADO.
 
-Estoy desarrollando un módulo de gestión documental ISO en Laravel. Te detallo todo lo avanzado y lo que necesito mantener/continuar:
+Flujo principal:
 
-Estructura General y Rutas:
+El asistente crea/sube un documento, el estado inicial es “EN REVISIÓN”.
 
-Modelo principal: DocumentoIso con relaciones a áreas (Area), procesos (Process), tipo de documento (Doctype), versiones y logs.
+El coordinador/jefe revisa el documento:
 
-Rutas y Controladores:
+Si cumple, lo aprueba (VIGENTE) y se registra el usuario y fecha de aprobación.
 
-Las rutas usan prefijos /admin y controladores en Admin.
+Si no cumple, lo marca como OBSERVADO, dejando observaciones obligatorias.
 
-Ejemplo de rutas AJAX para cargar procesos y responsables:
+Si es observado, solo el asistente responsable puede subir una nueva versión y agregar un comentario obligatorio de “modificaciones”. El estado vuelve a “EN REVISIÓN” y se repite el ciclo hasta aprobar.
 
-/admin/procesos-por-area/{area}
+Nadie puede editar un documento en estado VIGENTE o APROBADO.
 
-/admin/responsables-por-area/{area}
+Cada revisión del jefe/coordinador (marcando como “OBSERVADO” o “VIGENTE”) debe actualizar el campo fecha_revision en la tabla.
 
-Reglas para la Gestión y Flujo del Documento
+Cuando el documento es aprobado, se muestra el nombre y rol del aprobador, la fecha, y la versión vigente resaltada en la vista.
 
-Flujo estándar ISO:
+Permisos y validaciones:
 
-Cualquier usuario con permiso puede crear/subir documentos y asignar un responsable (normalmente, jefe o coordinador de área).
+Solo el responsable (asistente) puede subir archivo y comentario de nueva versión si el documento está en “OBSERVADO”.
 
-El documento inicia con estado "EN REVISIÓN".
+Solo el coordinador/jefe puede cambiar el estado de “EN REVISIÓN” a “VIGENTE” u “OBSERVADO”.
 
-Solo el jefe o coordinador del área puede aprobar el documento (cambiar el estado a “VIGENTE”).
+El botón “Guardar Cambios” del jefe se desactiva si no hay cambio de estado (evita guardar sin cambios).
 
-Los roles de responsable y aprobador suelen coincidir, pero pueden diferenciarse si es necesario.
+El campo “observaciones” es obligatorio si se marca como “OBSERVADO” por el jefe/coordinador.
 
-Formulario (Blade) de Creación de Documento
+El campo “modificaciones” es obligatorio para el asistente al subir nueva versión en “OBSERVADO”.
 
-Campos clave:
+El sistema tiene historial de versiones (documento_iso_versions) y logs de actividad (documento_iso_logs) con relación al usuario, acción, comentario y fecha.
 
-ID referencia ISO, tipo de documento, estado, responsable (combo dinámico), área (combo), proceso (combo dinámico), archivo, fecha de aprobación, aprobado por (combo dinámico), modificaciones, historial de versiones, comentarios.
+Las versiones muestran quién subió el archivo, su rol y su ID.
 
-Filtros dinámicos (JS):
+La versión vigente se resalta en la vista (tabla) usando badge y/o fondo especial.
 
-Al cambiar el área, se cargan procesos de esa área y se llenan los combos de responsable y aprobador con los usuarios que tengan el rol de “coordinador” o “jefe” de esa área.
+Vistas y UX:
 
-El campo de año/mes se muestra solo si el tipo de documento es “Políticas”.
+Solo se muestran los controles de edición permitidos según rol y estado.
 
-Combos de responsables y aprobadores:
+Se usan tablas Bootstrap (o personalizadas) para mostrar historial de versiones y logs, resaltando la versión vigente.
 
-Se cargan mediante fetch AJAX desde /admin/responsables-por-area/{area} y solo muestran usuarios con rol que contenga “coordinador” o “jefe” para el área seleccionada.
+El badge de la versión vigente muestra el texto en blanco para mayor contraste.
 
-Modelos y Relaciones
+El historial de actividad (logs) muestra acción, usuario, rol, fecha y comentario, evitando redundancia visual.
 
-Admin: puede tener uno o varios roles.
+Se usan scripts para mostrar/ocultar el textarea de observaciones según estado y prevenir guardado innecesario.
 
-Role: tiene campo “name” (ejemplo: “coordinador de gestión humana”).
+Estructura de la base de datos relevante:
 
-Área: relacionada con roles mediante una tabla pivote role_area.
+documento_iso: Contiene los campos principales del documento, incluyendo estado, responsable, fecha_revision, fecha_aprobacion, aprobado_por, etc.
 
-Consulta de responsables/aprobadores:
+documento_iso_versions: Guarda cada archivo subido, su comentario, usuario, fecha, etc.
 
-Busca admins donde su rol tenga “coordinador” o “jefe” y que estén relacionados con el área seleccionada.
+documento_iso_logs: Registra cada acción relevante (creación, edición, observación, aprobación, eliminación, etc.) con usuario, fecha, descripción y acción.
 
-Ejemplo de JS para combos dinámicos
-var areaSelect = document.getElementById('area_id');
-var procesoSelect = document.getElementById('process_id');
-var responsableSelect = document.getElementById('responsable_id');
-var aprobadoPorSelect = document.getElementById('aprobado_por_id');
-var mainurl = "{{ url('/') }}";
-areaSelect.addEventListener('change', function () {
-var areaId = this.value;
-// Cargar procesos
-fetch(mainurl + '/admin/procesos-por-area/' + areaId)
-// ... (fetch y render de procesos)
-// Cargar responsables
-fetch(mainurl + '/admin/responsables-por-area/' + areaId)
-// ... (fetch y render de responsables)
-// Cargar aprobadores (igual a responsables)
-fetch(mainurl + '/admin/responsables-por-area/' + areaId)
-// ... (fetch y render de aprobadores)
-});
+admins, roles, areas, process: Para gestión de permisos y jerarquía por área/proceso.
 
-Backend
+Código relevante:
 
-En el controlador:
+El método update() en el controlador valida los permisos y actualiza los estados, versiones, y logs según el flujo ISO.
 
-Endpoint /admin/responsables-por-area/{area} devuelve admins cuyo rol (en la tabla roles) tenga “coordinador” o “jefe” en el nombre y que estén vinculados al área.
+Se usa Blade y Bootstrap para las vistas, con clases y JS para control dinámico de formularios.
 
-SQL base para filtro:
-SELECT * FROM admins
-JOIN roles ON admins.role_id = roles.id
-WHERE (roles.name LIKE '%coordinador%' OR roles.name LIKE '%jefe%')
-AND roles.id IN (
-SELECT role_id FROM role_area WHERE area_id = {areaId}
-)
+El historial de versiones se muestra en tabla, la versión vigente se resalta y el badge “VIGENTE” lleva clase text-white.
 
-Estado del Documento ISO
+¿Qué quiero lograr?
 
-Estados posibles:
+Un sistema seguro, amigable, que cumpla el flujo y permisos ISO, con historial, trazabilidad y edición/revisión según rol.
 
-VIGENTE: Documento aprobado y en uso.
+Que la interfaz sea clara, que cada usuario vea y pueda hacer solo lo que le corresponde según el estado del documento.
 
-EN REVISIÓN: Documento subido, pero pendiente de aprobación.
+Que la normativa ISO quede bien implementada en los flujos y versiones.
 
-FALTA: Documento aún no existe o está pendiente de subir.
+Usa este contexto para cualquier tarea de código, mejoras, consultas, refactor o nuevas funciones para mi proyecto de documentos ISO en Laravel.
 
-OBSOLETO: Documento fuera de vigencia, reemplazado o anulado.
-
-Flujo esperado:
-
-El usuario (asistente, etc.) sube el documento → queda “En Revisión”.
-
-El jefe o coordinador del área (aprobador) revisa y cambia el estado a “Vigente” si lo aprueba.
-
-Requerimientos de permisos
-
-Cualquier usuario con permiso puede subir documentos.
-
-Solo jefe/coordinador puede aprobar (cambiar estado a “VIGENTE”).
-
-El sistema debe ser flexible para mostrar siempre los responsables y aprobadores correctos según el área y rol.
-
-Por favor, continúa la asesoría, solución de problemas y desarrollo de código manteniendo esta estructura, requerimientos y contexto. Si necesitas el código de algún archivo en específico, solo pídemelo.
+¿Te gustaría algo más resumido, o necesitas que incluya ejemplos de código, migraciones, reglas de validación exactas o snippets específicos?
+¿Prefieres el prompt en inglés para desarrollo con equipos internacionales?
+¡Dímelo y te lo adapto!
