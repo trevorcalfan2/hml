@@ -49,28 +49,43 @@
             <select name="doctype_id" id="doctype_id" class="form-control" required>
               <option value="" disabled selected>Seleccione un tipo</option>
               @foreach($doctypes as $doctype)
-                <option value="{{ $doctype->doctype_id }}">{{ $doctype->nombre }}</option>
+                <option value="{{ $doctype->doctype_id }}"
+                  {{ old('doctype_id') == $doctype->doctype_id ? 'selected' : '' }}>
+                  {{ $doctype->nombre }}
+                </option>
               @endforeach
             </select>
           </div>
 
-          {{-- Año/Mes si es registro --}}
+          {{-- Año/Mes/Frecuencia si es registro --}}
           <div id="registro_extra" class="col-md-12" style="display:none;">
-            <div class="form-group col-md-6">
-              <label>Año</label>
-              <input type="text" name="anio" class="form-control" value="{{ old('anio') }}">
-            </div>
-            <div class="form-group col-md-6">
-              <label>Mes</label>
-              <select name="mes" class="form-control">
-                <option value="" disabled selected>Seleccione un mes</option>
-                @foreach([
-                  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-                ] as $mes)
-                  <option value="{{ $mes }}" {{ old('mes') == $mes ? 'selected' : '' }}>{{ $mes }}</option>
-                @endforeach
-              </select>
+            <div class="row">
+              <div class="form-group col-md-4">
+                <label>Año</label>
+                <input type="number" name="anio" id="anio" class="form-control" value="{{ old('anio') }}">
+              </div>
+              <div class="form-group col-md-4">
+                <label>Mes</label>
+                <select name="mes" id="mes" class="form-control">
+                  <option value="" disabled selected>Seleccione un mes</option>
+                  @foreach([
+                    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                  ] as $mes)
+                    <option value="{{ $mes }}" {{ old('mes') == $mes ? 'selected' : '' }}>{{ $mes }}</option>
+                  @endforeach
+                </select>
+              </div>
+              <div class="form-group col-md-4">
+                <label>Frecuencia</label>
+                <select name="frecuencia" id="frecuencia" class="form-control">
+                  <option value="" disabled selected>Seleccione frecuencia</option>
+                  <option value="Mensual" {{ old('frecuencia') == 'Mensual' ? 'selected' : '' }}>Mensual</option>
+                  <option value="Trimestral" {{ old('frecuencia') == 'Trimestral' ? 'selected' : '' }}>Trimestral</option>
+                  <option value="Semestral" {{ old('frecuencia') == 'Semestral' ? 'selected' : '' }}>Semestral</option>
+                  <option value="Anual" {{ old('frecuencia') == 'Anual' ? 'selected' : '' }}>Anual</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -96,7 +111,7 @@
             </select>
           </div>
 
-          {{-- Responsable (solo el usuario logueado) --}}
+          {{-- Responsable --}}
           <div class="form-group col-md-4">
             <label>Responsable</label>
             <input type="text" class="form-control"
@@ -120,7 +135,6 @@
             <label>Proceso</label>
             <select name="process_id" class="form-control" required id="process_id">
               <option value="" disabled selected>Seleccione un proceso</option>
-              {{-- Las opciones se cargan por JS --}}
             </select>
           </div>
 
@@ -136,16 +150,11 @@
             <input type="text" name="fecha_revision" class="form-control" value="" disabled>
           </div>
 
-          {{-- NO mostrar el campo Aprobado por en la creación --}}
-
-
-          
           {{-- Fecha Aprobación --}}
           <div class="form-group col-md-6">
             <label>Fecha Aprobación</label>
             <input type="text" name="fecha_aprobacion" id="fecha_aprobacion" class="form-control" readonly style="background:#fff;">
           </div>
-
 
           {{-- Modificaciones (desactivado) --}}
           <div class="form-group col-md-12">
@@ -182,4 +191,36 @@
     </form>
   </div>
 </div>
+
+<script>
+ 
+  const DOCTYPE_REGISTRO_ID = 3; // 
+
+  function toggleRegistroExtra() {
+    var doctypeId = document.getElementById('doctype_id').value;
+    var extraDiv = document.getElementById('registro_extra');
+    var anio = document.getElementById('anio');
+    var mes = document.getElementById('mes');
+    var frecuencia = document.getElementById('frecuencia');
+
+    if (parseInt(doctypeId) === DOCTYPE_REGISTRO_ID) {
+      extraDiv.style.display = '';
+      anio.setAttribute('required', true);
+      mes.setAttribute('required', true);
+      frecuencia.setAttribute('required', true);
+    } else {
+      extraDiv.style.display = 'none';
+      anio.removeAttribute('required');
+      mes.removeAttribute('required');
+      frecuencia.removeAttribute('required');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var doctypeSel = document.getElementById('doctype_id');
+    doctypeSel.addEventListener('change', toggleRegistroExtra);
+    toggleRegistroExtra(); // inicializa en load por si hay old
+  });
+</script>
+
 @endsection

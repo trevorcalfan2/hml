@@ -183,102 +183,134 @@ public function aprobadoresPorArea($areaNombre)
      * Guardar nuevo documento
      */
     public function store(Request $request)
-    {
-        $admin = Auth::guard('admin')->user();
+{
+    $admin = Auth::guard('admin')->user();
 
-        // Validar proceso pertenece a su área/rol (importante)
-        if ($admin->role_id) {
-            $rolNombre = strtolower($admin->role->name);
-            $areas = Area::all();
-            $areaCoincidente = $areas->first(function ($area) use ($rolNombre) {
-                return str_contains($rolNombre, strtolower($area->nombre));
-            });
+    // Validar proceso pertenece a su área/rol (importante)
+    if ($admin->role_id) {
+        $rolNombre = strtolower($admin->role->name);
+        $areas = Area::all();
+        $areaCoincidente = $areas->first(function ($area) use ($rolNombre) {
+            return str_contains($rolNombre, strtolower($area->nombre));
+        });
 
-            if ($areaCoincidente) {
-                $procesoPermitido = Process::where('process_id', $request->process_id)
-                    ->where('area_id', $areaCoincidente->area_id)
-                    ->exists();
-                if (!$procesoPermitido) {
-                    return back()->withErrors(['process_id' => 'No tiene permisos sobre este proceso'])->withInput();
-                }
-            } else {
-                return back()->withErrors(['area_id' => 'No tiene área asignada'])->withInput();
+        if ($areaCoincidente) {
+            $procesoPermitido = Process::where('process_id', $request->process_id)
+                ->where('area_id', $areaCoincidente->area_id)
+                ->exists();
+            if (!$procesoPermitido) {
+                return back()->withErrors(['process_id' => 'No tiene permisos sobre este proceso'])->withInput();
             }
+        } else {
+            return back()->withErrors(['area_id' => 'No tiene área asignada'])->withInput();
         }
-
-        // Reglas de validación
-        $rules = [
-            'doc_id'           => 'nullable|string|max:255',
-            'estado'           => 'required|string|max:255',
-            'responsable'      => 'required|string|max:255',
-            'process_id'       => 'required|exists:process,process_id',
-            'doctype_id'       => 'required|exists:doctype,doctype_id',
-            'archivo'          => 'required|file|mimes:pdf,doc,docx',
-            'fecha_aprobacion' => 'nullable|date',
-            'anio'             => 'nullable|integer',
-            'mes'              => 'nullable|string|max:25',
-            'comentarios'      => 'nullable|string|max:1000',
-        ];
-
-        $validator = Validator::make($request->all(), $rules);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $data = $request->all();
-
-        // Agrega el usuario que crea el documento
-        $data['created_by'] = $admin->id;
-
-        // Solo jefes/coordinadores/superadmin pueden dejar estado como no "EN REVISIÓN"
-        $rol = $admin->role;
-        $rolNombre = $rol ? strtolower($rol->name) : '';
-        $isJefe = $rol && (str_contains($rolNombre, 'coordinador') || str_contains($rolNombre, 'jefe'));
-        $isSuperAdmin = empty($admin->role_id);
-
-        if (!$isSuperAdmin && !$isJefe) {
-            $data['estado'] = 'EN REVISIÓN';
-        }
-
-        // Subida del archivo principal
-        if ($request->hasFile('archivo')) {
-            $filename = time() . '_' . $request->file('archivo')->getClientOriginalName();
-            $request->file('archivo')->move(public_path('uploads/documentos_iso'), $filename);
-            $data['archivo'] = $filename;
-        }
-
-        // Inicialización de campos ISO
-        $data['historial_versiones'] = '';
-        $data['modificaciones'] = '';
-        $data['fecha_revision'] = null;
-
-        // Crear documento
-        $documento = DocumentoIso::create($data);
-
-        // Crear versión inicial
-        if (!empty($data['archivo'])) {
-            DocumentoIsoVersion::create([
-                'documento_iso_id' => $documento->id,
-                'archivo'          => $data['archivo'],
-                'comentario'       => $request->input('comentarios', 'Versión inicial'),
-                'user_id'          => Auth::id() ?? 1,
-                'created_at'       => $data['fecha_aprobacion'] ?? now(),
-            ]);
-        }
-
-        // Log de creación
-        DocumentoIsoLog::create([
-            'documento_iso_id' => $documento->id,
-            'user_id'          => Auth::id() ?? 1,
-            'accion'           => 'Creación',
-            'descripcion'      => 'Documento creado',
-            'created_at'       => now(),
-        ]);
-
-        Session::flash('success', 'Documento ISO creado correctamente');
-        return redirect()->route('admin.documento_iso.index');
     }
+
+    // Busca el ID del doctype REGISTRO en tu base de datos
+    $ID_DOCTYPE_REGISTRO = 3; 
+
+    // Reglas de validación
+    $rules = [
+        'doc_id'           => 'nullable|string|max:255',
+        'estado'           => 'required|string|max:255',
+        'responsable'      => 'required|string|max:255',
+        'process_id'       => 'required|exists:process,process_id',
+        'doctype_id'       => 'required|exists:doctype,doctype_id',
+        'archivo'          => 'required|file|mimes:pdf,doc,docx',
+        'fecha_aprobacion' => 'nullable|date',
+        'comentarios'      => 'nullable|string|max:1000',
+    ];
+
+    // Si es registro, frecuencia/anio/mes requeridos
+    if ($request->input('doctype_id') == $ID_DOCTYPE_REGISTRO) {
+        $rules['anio'] = 'required|integer';
+        $rules['mes'] = 'required|string|max:25';
+        $rules['frecuencia'] = 'required|in:Mensual,Trimestral,Semestral,Anual';
+    } else {
+        $rules['anio'] = 'nullable|integer';
+        $rules['mes'] = 'nullable|string|max:25';
+        $rules['frecuencia'] = 'nullable|in:Mensual,Trimestral,Semestral,Anual';
+    }
+
+    $validator = Validator::make($request->all(), $rules);
+
+    if ($validator->fails()) {
+        return back()->withErrors($validator)->withInput();
+    }
+
+    $data = $request->all();
+
+    // Agrega el usuario que crea el documento
+    $data['created_by'] = $admin->id;
+
+    // Solo jefes/coordinadores/superadmin pueden dejar estado como no "EN REVISIÓN"
+    $rol = $admin->role;
+    $rolNombre = $rol ? strtolower($rol->name) : '';
+    $isJefe = $rol && (str_contains($rolNombre, 'coordinador') || str_contains($rolNombre, 'jefe'));
+    $isSuperAdmin = empty($admin->role_id);
+
+    if (!$isSuperAdmin && !$isJefe) {
+        $data['estado'] = 'EN REVISIÓN';
+    }
+
+    // Subida del archivo principal
+    if ($request->hasFile('archivo')) {
+        $filename = time() . '_' . $request->file('archivo')->getClientOriginalName();
+        $request->file('archivo')->move(public_path('uploads/documentos_iso'), $filename);
+        $data['archivo'] = $filename;
+    }
+
+    // Inicialización de campos ISO
+    $data['historial_versiones'] = '';
+    $data['modificaciones'] = '';
+    $data['fecha_revision'] = null;
+
+    // Solo para registro: guarda la frecuencia
+    if ($request->input('doctype_id') == $ID_DOCTYPE_REGISTRO) {
+        $data['frecuencia'] = $request->input('frecuencia');
+    }
+
+    // Crear documento
+    $documento = DocumentoIso::create($data);
+
+    // Crear versión inicial
+    if (!empty($data['archivo'])) {
+        DocumentoIsoVersion::create([
+            'documento_iso_id' => $documento->id,
+            'archivo'          => $data['archivo'],
+            'comentario'       => $request->input('comentarios', 'Versión inicial'),
+            'user_id'          => $admin->id,
+            'created_at'       => $data['fecha_aprobacion'] ?? now(),
+        ]);
+    }
+
+    // Si es REGISTRO, crea el registro asociado
+    if ($request->input('doctype_id') == $ID_DOCTYPE_REGISTRO) {
+        \App\Models\DocumentoIsoRegistro::create([
+            'documento_iso_id' => $documento->id,
+            'anio'             => $request->input('anio'),
+            'mes'              => $request->input('mes'),
+            'frecuencia'       => $request->input('frecuencia'),
+            'archivo'          => $data['archivo'],
+            'comentario'       => $request->input('comentarios'),
+            'responsable_id'   => $admin->id,
+            'estado'           => 'REGISTRADO',
+            'fecha_registro'   => now(),
+        ]);
+    }
+
+    // Log de creación
+    DocumentoIsoLog::create([
+        'documento_iso_id' => $documento->id,
+        'user_id'          => $admin->id,
+        'accion'           => 'Creación',
+        'descripcion'      => 'Documento creado',
+        'created_at'       => now(),
+    ]);
+
+    Session::flash('success', 'Documento ISO creado correctamente');
+    return redirect()->route('admin.documento_iso.index');
+}
 
 
 

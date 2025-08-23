@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 22, 2025 at 11:31 PM
+-- Generation Time: Aug 23, 2025 at 06:22 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -572,35 +572,35 @@ CREATE TABLE `documento_iso` (
   `doc_id` varchar(45) DEFAULT NULL,
   `estado` varchar(255) NOT NULL,
   `responsable` varchar(255) NOT NULL,
-  `fecha_revision` date DEFAULT NULL,
-  `fecha_aprobacion` date DEFAULT NULL,
+  `fecha_revision` datetime DEFAULT NULL,
+  `fecha_aprobacion` datetime DEFAULT NULL,
   `aprobado_por` varchar(255) DEFAULT NULL,
   `archivo` varchar(255) DEFAULT NULL,
-  `anio` int(11) DEFAULT NULL,
-  `mes` varchar(20) DEFAULT NULL,
   `comentarios` text DEFAULT NULL,
   `process_id` bigint(20) DEFAULT NULL,
   `doctype_id` bigint(20) DEFAULT NULL,
   `estado_workflow` enum('Borrador','En revisión','Aprobado','Rechazado') DEFAULT 'Borrador',
   `aprobador_id` bigint(20) UNSIGNED DEFAULT NULL,
   `fecha_aprobacion_workflow` datetime DEFAULT NULL,
-  `created_by` int(11) DEFAULT NULL
+  `created_by` int(11) DEFAULT NULL,
+  `frecuencia` enum('Mensual','Trimestral','Semestral','Anual') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `documento_iso`
 --
 
-INSERT INTO `documento_iso` (`id`, `doc_id`, `estado`, `responsable`, `fecha_revision`, `fecha_aprobacion`, `aprobado_por`, `archivo`, `anio`, `mes`, `comentarios`, `process_id`, `doctype_id`, `estado_workflow`, `aprobador_id`, `fecha_aprobacion_workflow`, `created_by`) VALUES
-(1, NULL, 'Vigente', 'Juan Perez', '2024-06-01', '2024-06-15', 'Maria Gomez', 'doc1.pdf', 2024, 'Junio', 'OK', 1, 1, 'Aprobado', 7, '2025-08-19 17:24:07', 0),
-(2, NULL, 'Obsoleto', 'Ana Lopez', '2024-05-10', NULL, NULL, 'doc2.pdf', 2023, 'Mayo', 'OK', 2, 2, 'Borrador', NULL, NULL, 0),
-(4, NULL, 'EN REVISIÓN', '16', NULL, NULL, '16', '1755808539_MODELO DE CARTA.docx', NULL, NULL, 'wqwewqe', 10, 2, 'Borrador', NULL, NULL, 0),
-(5, NULL, 'EN REVISIÓN', '16', NULL, NULL, '16', '1755811832_MODELO DE CARTA.docx', NULL, NULL, 'EEEEEEE', 10, 1, 'Borrador', NULL, NULL, NULL),
-(6, 'sig 12221', 'EN REVISIÓN', '16', NULL, NULL, '16', '1755812252_letter-3.pdf', NULL, NULL, 'pppppp', 10, 1, 'Borrador', NULL, NULL, NULL),
-(7, 'sig 12221222', 'EN REVISIÓN', '16', NULL, NULL, '16', '1755815605_COTIZACION GRUPO HIDRAULICA.docx', NULL, NULL, 'rwqrqwrqwr', 10, 1, 'Borrador', NULL, NULL, 1),
-(8, 'SIG- 344', 'OBSERVADO', '16', NULL, NULL, '16', '1755877641_INFORME INVETSA.pdf', NULL, NULL, 'JJTYK', 10, 1, 'Borrador', NULL, NULL, 17),
-(9, 'SIG- 3445', 'EN REVISION', '17', NULL, '2025-08-22', '', '1755890997_INFORME DYNAMOWL.pdf', NULL, NULL, 'primera creacino iso 90010', 10, 1, 'Borrador', NULL, NULL, 17),
-(10, 'SIG- 34456', 'VIGENTE', '17', NULL, '2025-08-22', '16', '1755895331_INFORME INVETSA.pdf', NULL, NULL, 'reviiiiSAAAAAAAARRRRRRRR', 10, 1, 'Borrador', NULL, NULL, 17);
+INSERT INTO `documento_iso` (`id`, `doc_id`, `estado`, `responsable`, `fecha_revision`, `fecha_aprobacion`, `aprobado_por`, `archivo`, `comentarios`, `process_id`, `doctype_id`, `estado_workflow`, `aprobador_id`, `fecha_aprobacion_workflow`, `created_by`, `frecuencia`) VALUES
+(1, NULL, 'Vigente', 'Juan Perez', '2024-06-01 00:00:00', '2024-06-15 00:00:00', 'Maria Gomez', 'doc1.pdf', 'OK', 1, 1, 'Aprobado', 7, '2025-08-19 17:24:07', 0, NULL),
+(2, NULL, 'Obsoleto', 'Ana Lopez', '2024-05-10 00:00:00', NULL, NULL, 'doc2.pdf', 'OK', 2, 2, 'Borrador', NULL, NULL, 0, NULL),
+(4, NULL, 'EN REVISIÓN', '16', NULL, NULL, '16', '1755808539_MODELO DE CARTA.docx', 'wqwewqe', 10, 2, 'Borrador', NULL, NULL, 0, NULL),
+(5, NULL, 'EN REVISIÓN', '16', NULL, NULL, '16', '1755811832_MODELO DE CARTA.docx', 'EEEEEEE', 10, 1, 'Borrador', NULL, NULL, NULL, NULL),
+(6, 'sig 12221', 'EN REVISIÓN', '16', NULL, NULL, '16', '1755812252_letter-3.pdf', 'pppppp', 10, 1, 'Borrador', NULL, NULL, NULL, NULL),
+(7, 'sig 12221222', 'EN REVISIÓN', '16', NULL, NULL, '16', '1755815605_COTIZACION GRUPO HIDRAULICA.docx', 'rwqrqwrqwr', 10, 1, 'Borrador', NULL, NULL, 1, NULL),
+(8, 'SIG- 344', 'OBSERVADO', '16', NULL, NULL, '16', '1755877641_INFORME INVETSA.pdf', 'JJTYK', 10, 1, 'Borrador', NULL, NULL, 17, NULL),
+(9, 'SIG- 3445', 'EN REVISION', '17', NULL, '2025-08-22 00:00:00', '', '1755890997_INFORME DYNAMOWL.pdf', 'primera creacino iso 90010', 10, 1, 'Borrador', NULL, NULL, 17, NULL),
+(10, 'SIG- 34456', 'VIGENTE', '17', NULL, '2025-08-22 00:00:00', '16', '1755895331_INFORME INVETSA.pdf', 'reviiiiSAAAAAAAARRRRRRRR', 10, 1, 'Borrador', NULL, NULL, 17, NULL),
+(11, 'SIG-222222', 'VIGENTE', '17', '2025-08-22 17:18:31', '2025-08-22 17:18:31', '16', '1755901066_COTIZACION GRUPO HIDRAULICA.docx', 'PPPPPPPPPRIMERA VERSION', 10, 1, 'Borrador', NULL, NULL, 17, NULL);
 
 -- --------------------------------------------------------
 
@@ -641,7 +641,34 @@ INSERT INTO `documento_iso_logs` (`id`, `documento_iso_id`, `user_id`, `accion`,
 (20, 10, 17, 'Creación', 'Documento creado', '2025-08-22 15:20:02'),
 (21, 10, 16, 'Observación', 'PORAFVOR REISA BIEN PORQUE HAY DETALLER ADJUNTO DETALLES', '2025-08-22 15:21:27'),
 (22, 10, 17, 'Edición', 'Nueva versión enviada para revisión', '2025-08-22 15:42:11'),
-(23, 10, 16, 'Aprobación', 'Documento aprobado', '2025-08-22 16:14:00');
+(23, 10, 16, 'Aprobación', 'Documento aprobado', '2025-08-22 16:14:00'),
+(24, 11, 17, 'Creación', 'Documento creado', '2025-08-22 16:42:05'),
+(25, 11, 16, 'Observación', 'e observo el doc debido a fallas en su estandar', '2025-08-22 16:43:23'),
+(26, 11, 17, 'Edición', 'Nueva versión enviada para revisión', '2025-08-22 16:44:42'),
+(27, 11, 16, 'Observación', 'COMENTARIO PARA REVISAR DQDQWDQ', '2025-08-22 17:14:54'),
+(28, 11, 17, 'Edición', 'Nueva versión enviada para revisión', '2025-08-22 17:17:46'),
+(29, 11, 16, 'Aprobación', 'Documento aprobado', '2025-08-22 17:18:31');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `documento_iso_registro`
+--
+
+CREATE TABLE `documento_iso_registro` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `documento_iso_id` bigint(20) NOT NULL,
+  `anio` int(11) NOT NULL,
+  `mes` varchar(20) NOT NULL,
+  `frecuencia` enum('Mensual','Trimestral','Semestral','Anual') NOT NULL,
+  `archivo` varchar(255) NOT NULL,
+  `comentario` varchar(1000) DEFAULT NULL,
+  `responsable_id` bigint(20) UNSIGNED NOT NULL,
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
+  `estado` enum('REGISTRADO','FALTA','OBSERVADO','APROBADO') DEFAULT 'REGISTRADO',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -693,7 +720,10 @@ INSERT INTO `documento_iso_versions` (`id`, `documento_iso_id`, `archivo`, `come
 (11, 9, '1755885699_letter-3.pdf', 'primera creacino iso 90010', 17, '2025-08-22 13:01:39'),
 (12, 9, '1755890997_INFORME DYNAMOWL.pdf', 'revisar porfavor cambios aplicados', 17, '2025-08-22 14:29:57'),
 (13, 10, '1755894002_INFORME DYNAMOWL.pdf', 'reviiiiSAAAAAAAARRRRRRRR', 17, '2025-08-22 15:20:02'),
-(14, 10, '1755895331_INFORME INVETSA.pdf', 'nueva actualizacion', 17, '2025-08-22 15:42:11');
+(14, 10, '1755895331_INFORME INVETSA.pdf', 'nueva actualizacion', 17, '2025-08-22 15:42:11'),
+(15, 11, '1755898925_letter-3.pdf', 'PPPPPPPPPRIMERA VERSION', 17, '2025-08-22 16:42:05'),
+(16, 11, '1755899082_MODELO DE CARTA.docx', NULL, 17, '2025-08-22 16:44:42'),
+(17, 11, '1755901066_COTIZACION GRUPO HIDRAULICA.docx', 'PORFAVOR REVISAR MI MODIFICACION SE ACTUALIZO', 17, '2025-08-22 17:17:46');
 
 -- --------------------------------------------------------
 
@@ -4529,6 +4559,14 @@ ALTER TABLE `documento_iso_logs`
   ADD KEY `documento_iso_id` (`documento_iso_id`);
 
 --
+-- Indexes for table `documento_iso_registro`
+--
+ALTER TABLE `documento_iso_registro`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_documento_iso_registro_documento` (`documento_iso_id`),
+  ADD KEY `fk_documento_iso_registro_responsable` (`responsable_id`);
+
+--
 -- Indexes for table `documento_iso_role`
 --
 ALTER TABLE `documento_iso_role`
@@ -4903,19 +4941,25 @@ ALTER TABLE `doctype`
 -- AUTO_INCREMENT for table `documento_iso`
 --
 ALTER TABLE `documento_iso`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `documento_iso_logs`
 --
 ALTER TABLE `documento_iso_logs`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+
+--
+-- AUTO_INCREMENT for table `documento_iso_registro`
+--
+ALTER TABLE `documento_iso_registro`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `documento_iso_versions`
 --
 ALTER TABLE `documento_iso_versions`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `email_templates`
@@ -5204,6 +5248,13 @@ ALTER TABLE `documento_iso`
 --
 ALTER TABLE `documento_iso_logs`
   ADD CONSTRAINT `documento_iso_logs_ibfk_1` FOREIGN KEY (`documento_iso_id`) REFERENCES `documento_iso` (`id`);
+
+--
+-- Constraints for table `documento_iso_registro`
+--
+ALTER TABLE `documento_iso_registro`
+  ADD CONSTRAINT `fk_documento_iso_registro_documento` FOREIGN KEY (`documento_iso_id`) REFERENCES `documento_iso` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_documento_iso_registro_responsable` FOREIGN KEY (`responsable_id`) REFERENCES `admins` (`id`);
 
 --
 -- Constraints for table `documento_iso_role`

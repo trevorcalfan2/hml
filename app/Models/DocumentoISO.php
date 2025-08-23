@@ -9,7 +9,7 @@ class DocumentoIso extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = ['doc_id','estado', 'responsable', 'fecha_revision', 'fecha_aprobacion', 'aprobado_por',
-        'archivo', 'anio', 'mes', 'comentarios',
+        'archivo','frecuencia','comentarios',
         'process_id', 'doctype_id', 'estado_workflow', 'aprobador_id', 'fecha_aprobacion_workflow','created_by'
     ];
 
@@ -41,6 +41,11 @@ class DocumentoIso extends Model
     {
         return $this->belongsTo(\App\Models\Admin::class, 'aprobado_por');
     }
+    public function registros()
+    {
+    return $this->hasMany(DocumentoIsoRegistro::class, 'documento_iso_id');
+    }
+
 
   
 }

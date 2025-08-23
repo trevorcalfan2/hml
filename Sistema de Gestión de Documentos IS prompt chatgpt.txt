@@ -1,101 +1,63 @@
-¡Por supuesto!
-Aquí tienes un prompt completo para que lo uses como contexto en otros chats o para darle a cualquier asistente lo que necesita saber de tu proyecto ISO/Laravel, bien estructurado y actualizado:
+PROYECTO DE SISTEMA DE GESTIÓN DOCUMENTAL ISO (Laravel, Bootstrap)
 
-Prompt/Contexto Completo para el proyecto de Gestión de Documentos ISO en Laravel
+[RESUMEN GENERAL]
+- El sistema gestiona documentos ISO (políticas, procedimientos, instructivos, formatos, registros) para una organización.
+- Utiliza Laravel (PHP), Bootstrap, estructura de roles (asistente, jefe/coordinador, superadmin).
+- Flujo basado en gestión de documentos, estados, aprobaciones, historial y control automatizado de registros.
 
-Estoy desarrollando un sistema de gestión de documentos ISO usando Laravel.
-El sistema tiene usuarios con distintos roles: asistentes, coordinadores/jefes y administradores.
-El flujo de gestión, permisos y lógica está pensado para cumplir la normativa ISO y asegurar trazabilidad, versionado, validación y aprobación de documentos.
+[REQUERIMIENTOS PRINCIPALES]
+1. CRUD de documentos ISO.
+2. Soporte para tipos de documento (“doctype”): Política, Procedimiento, Instructivo, Formato, Registro.
+3. Flujos de aprobación, revisión, observación, con historial de versiones y logs de actividad.
+4. Control de usuarios por rol y privilegios:
+   - Asistente: sube y gestiona documentos.
+   - Jefe/Coordinador: revisa, observa o aprueba.
+   - Superadmin: acceso total.
+5. Subida de archivos PDF/DOC/DOCX asociados a cada documento/version.
+6. Gestión y visualización del historial de versiones, logs, responsables y aprobadores.
 
-Requisitos y reglas del sistema:
+[REGISTRO Y FRECUENCIA (REQUISITO CLAVE PARA “REGISTRO”)]
+- El doctype “REGISTRO” requiere campos obligatorios: año, mes y frecuencia (Mensual, Trimestral, Semestral, Anual).
+- Otros doctypes no usan estos campos (serán NULL o inactivos).
+- Frecuencia determina cuándo corresponde subir un nuevo registro/documento (ej: cada mes, cada trimestre).
+- Hay una tabla adicional `documento_iso_registro` que almacena los envíos de registros (documento_iso_id, anio, mes, frecuencia, archivo, comentario, responsable_id, estado, fecha_registro).
+- El sistema debe controlar automáticamente si falta un registro para un periodo, marcando “FALTA” y notificando (idealmente por background job).
+- Solo registros en estado “APROBADO” cuentan como cumplidos para la frecuencia y el periodo. Si se observa o no aprueba, se sigue marcando “FALTA” hasta que el registro sea válido.
+- Si un registro se sube fuera de tiempo, se marca como “REGISTRADO”, pero puede tener estado “FALTA” si es observado/no aprobado en tiempo.
+- La edición manual de año/mes/frecuencia debe ser limitada o auditada para evitar inconsistencias.
 
-Roles:
+[OTROS DOCTYPES]
+- Para políticas, instructivos, formatos, etc. el flujo es más manual y no requiere control automático de frecuencia.
+- Su actualización se da solo cuando hay cambios; no hay validación periódica, año ni frecuencia.
 
-Asistente: Crea documentos y sube nuevas versiones si su documento fue “OBSERVADO”.
+[APROBACIÓN Y FLUJOS]
+- Documentos pasan por los estados: EN REVISIÓN, OBSERVADO, VIGENTE, APROBADO, FALTA, OBSOLETO.
+- Asistente sube nueva versión → jefe/coordinador revisa (puede aprobar u observar).
+- Observaciones requieren que el responsable suba una nueva versión.
+- El historial y los logs de actividad deben ser claros, mostrar quién, cuándo y qué acción realizó, con roles, nombre y ID.
 
-Coordinador/Jefe: Revisa, aprueba (“VIGENTE”) o hace observaciones (“OBSERVADO”) sobre los documentos.
+[INTERFAZ Y USABILIDAD]
+- Historial de versiones y logs deben ser visualmente claros, con colores bien contrastados (fondos oscuros, textos blancos para VIGENTE).
+- Mostrar la ruta del archivo, usuario que realizó la acción, roles, ID, etc.
+- Validar dinámicamente los campos de registro en el frontend: si el doctype es “REGISTRO”, los campos año, mes y frecuencia deben ser obligatorios.
+- El sistema debe mostrar faltas o pendientes en dashboard y notificaciones, tanto en escritorio como en vistas del usuario (campanita, barra lateral, etc.).
 
-Administrador: Puede ver todo, actuar como superadmin, no está restringido por áreas.
+[ESTÁNDARES ISO]
+- El sistema debe mantener inmutabilidad en la historia de cambios y versiones (no se borra historial ni logs).
+- No se debe eliminar usuarios sin considerar impacto en la trazabilidad histórica.
+- Los cambios en frecuencia o periodo deben ser auditados (no se recomienda cambiar frecuencias a mitad de periodo sin justificación y registro).
+- Cumplir con el principio de “trazabilidad y evidencia de gestión documental”.
 
-Estados de los documentos:
-EN REVISIÓN, VIGENTE, OBSERVADO, OBSOLETO, FALTA, APROBADO.
+[BASES DE DATOS]
+- Tablas: documento_iso, documento_iso_registro, documento_iso_versions, documento_iso_logs, admins, roles, areas, process, doctype.
+- Revisar los campos unsigned/bigint para claves foráneas (ejemplo, admins.id es unsigned).
 
-Flujo principal:
+[CONSIDERACIONES DE AUTOMATIZACIÓN]
+- Es preferible automatizar el control de faltas mediante jobs en background (Artisan Scheduler) y enviar notificaciones.
+- El dashboard debe ser capaz de mostrar faltantes/pendientes de manera clara, por frecuencia, área, responsable, etc.
 
-El asistente crea/sube un documento, el estado inicial es “EN REVISIÓN”.
+[RECOMENDACIONES]
+- Si necesitas adaptar esto a un nuevo asistente/chat, indica el ID del doctype “REGISTRO” real, y revisa los nombres de tabla/campo.
+- Sigue los principios ISO de inmutabilidad, trazabilidad y control documental en todo el flujo.
 
-El coordinador/jefe revisa el documento:
-
-Si cumple, lo aprueba (VIGENTE) y se registra el usuario y fecha de aprobación.
-
-Si no cumple, lo marca como OBSERVADO, dejando observaciones obligatorias.
-
-Si es observado, solo el asistente responsable puede subir una nueva versión y agregar un comentario obligatorio de “modificaciones”. El estado vuelve a “EN REVISIÓN” y se repite el ciclo hasta aprobar.
-
-Nadie puede editar un documento en estado VIGENTE o APROBADO.
-
-Cada revisión del jefe/coordinador (marcando como “OBSERVADO” o “VIGENTE”) debe actualizar el campo fecha_revision en la tabla.
-
-Cuando el documento es aprobado, se muestra el nombre y rol del aprobador, la fecha, y la versión vigente resaltada en la vista.
-
-Permisos y validaciones:
-
-Solo el responsable (asistente) puede subir archivo y comentario de nueva versión si el documento está en “OBSERVADO”.
-
-Solo el coordinador/jefe puede cambiar el estado de “EN REVISIÓN” a “VIGENTE” u “OBSERVADO”.
-
-El botón “Guardar Cambios” del jefe se desactiva si no hay cambio de estado (evita guardar sin cambios).
-
-El campo “observaciones” es obligatorio si se marca como “OBSERVADO” por el jefe/coordinador.
-
-El campo “modificaciones” es obligatorio para el asistente al subir nueva versión en “OBSERVADO”.
-
-El sistema tiene historial de versiones (documento_iso_versions) y logs de actividad (documento_iso_logs) con relación al usuario, acción, comentario y fecha.
-
-Las versiones muestran quién subió el archivo, su rol y su ID.
-
-La versión vigente se resalta en la vista (tabla) usando badge y/o fondo especial.
-
-Vistas y UX:
-
-Solo se muestran los controles de edición permitidos según rol y estado.
-
-Se usan tablas Bootstrap (o personalizadas) para mostrar historial de versiones y logs, resaltando la versión vigente.
-
-El badge de la versión vigente muestra el texto en blanco para mayor contraste.
-
-El historial de actividad (logs) muestra acción, usuario, rol, fecha y comentario, evitando redundancia visual.
-
-Se usan scripts para mostrar/ocultar el textarea de observaciones según estado y prevenir guardado innecesario.
-
-Estructura de la base de datos relevante:
-
-documento_iso: Contiene los campos principales del documento, incluyendo estado, responsable, fecha_revision, fecha_aprobacion, aprobado_por, etc.
-
-documento_iso_versions: Guarda cada archivo subido, su comentario, usuario, fecha, etc.
-
-documento_iso_logs: Registra cada acción relevante (creación, edición, observación, aprobación, eliminación, etc.) con usuario, fecha, descripción y acción.
-
-admins, roles, areas, process: Para gestión de permisos y jerarquía por área/proceso.
-
-Código relevante:
-
-El método update() en el controlador valida los permisos y actualiza los estados, versiones, y logs según el flujo ISO.
-
-Se usa Blade y Bootstrap para las vistas, con clases y JS para control dinámico de formularios.
-
-El historial de versiones se muestra en tabla, la versión vigente se resalta y el badge “VIGENTE” lleva clase text-white.
-
-¿Qué quiero lograr?
-
-Un sistema seguro, amigable, que cumpla el flujo y permisos ISO, con historial, trazabilidad y edición/revisión según rol.
-
-Que la interfaz sea clara, que cada usuario vea y pueda hacer solo lo que le corresponde según el estado del documento.
-
-Que la normativa ISO quede bien implementada en los flujos y versiones.
-
-Usa este contexto para cualquier tarea de código, mejoras, consultas, refactor o nuevas funciones para mi proyecto de documentos ISO en Laravel.
-
-¿Te gustaría algo más resumido, o necesitas que incluya ejemplos de código, migraciones, reglas de validación exactas o snippets específicos?
-¿Prefieres el prompt en inglés para desarrollo con equipos internacionales?
-¡Dímelo y te lo adapto!
+[FIN DEL PROMPT]
