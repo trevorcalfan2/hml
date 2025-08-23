@@ -186,6 +186,9 @@ public function aprobadoresPorArea($areaNombre)
 {
     $admin = Auth::guard('admin')->user();
 
+    // Busca el ID del doctype REGISTRO en tu base de datos
+    $ID_DOCTYPE_REGISTRO = 3; // <-- AJUSTA según tu id real
+
     // Validar proceso pertenece a su área/rol (importante)
     if ($admin->role_id) {
         $rolNombre = strtolower($admin->role->name);
@@ -206,9 +209,6 @@ public function aprobadoresPorArea($areaNombre)
         }
     }
 
-    // Busca el ID del doctype REGISTRO en tu base de datos
-    $ID_DOCTYPE_REGISTRO = 3; 
-
     // Reglas de validación
     $rules = [
         'doc_id'           => 'nullable|string|max:255',
@@ -221,9 +221,9 @@ public function aprobadoresPorArea($areaNombre)
         'comentarios'      => 'nullable|string|max:1000',
     ];
 
-    // Si es registro, frecuencia/anio/mes requeridos
+    // Si es REGISTRO, frecuencia/anio/mes requeridos
     if ($request->input('doctype_id') == $ID_DOCTYPE_REGISTRO) {
-        $rules['anio'] = 'required|integer';
+        $rules['anio'] = 'required|integer|min:2020|max:' . (date('Y') + 1);
         $rules['mes'] = 'required|string|max:25';
         $rules['frecuencia'] = 'required|in:Mensual,Trimestral,Semestral,Anual';
     } else {
@@ -233,7 +233,6 @@ public function aprobadoresPorArea($areaNombre)
     }
 
     $validator = Validator::make($request->all(), $rules);
-
     if ($validator->fails()) {
         return back()->withErrors($validator)->withInput();
     }
@@ -265,9 +264,11 @@ public function aprobadoresPorArea($areaNombre)
     $data['modificaciones'] = '';
     $data['fecha_revision'] = null;
 
-    // Solo para registro: guarda la frecuencia
+    // Solo para registro: guarda la frecuencia, año y mes
     if ($request->input('doctype_id') == $ID_DOCTYPE_REGISTRO) {
         $data['frecuencia'] = $request->input('frecuencia');
+        $data['anio'] = $request->input('anio');
+        $data['mes'] = $request->input('mes');
     }
 
     // Crear documento
@@ -316,33 +317,23 @@ public function aprobadoresPorArea($areaNombre)
 
 
 
-    public function edit($id)
-    {
-        $documento = DocumentoIso::with(['versiones.user', 'logs'])->findOrFail($id);
-        $areas = Area::all();
-        $procesos = Process::with('area')->get();
-        $doctypes = Doctype::all();
+public function edit($id)
+{
+    $documento = DocumentoIso::with(['versiones.user', 'logs'])->findOrFail($id);
+    $areas = Area::all();
+    $procesos = Process::with('area')->get();
+    $doctypes = Doctype::all();
 
-        // (Opcional) Puedes cargar aprobadores para cambiar el aprobador en edición
-        $admin = Auth::guard('admin')->user();
-        if (!$admin->role_id) {
-            $aprobadores = \App\Models\Admin::with('role.areas')->get();
-        } else {
-            $aprobadores = collect([$admin->load('role.areas')]);
-        }
-
-
-        \Log::info('Datos enviados a edit:', [
-    'documento' => $documento->toArray(),
-    'areas' => $areas->toArray(),
-    'procesos' => $procesos->toArray(),
-    'doctypes' => $doctypes->toArray(),
-    'aprobadores' => $aprobadores->toArray(),
-    'admin' => $admin ? $admin->toArray() : null,
-]);
-
-        return view('admin.documento_iso.edit', compact('documento', 'areas', 'procesos', 'doctypes', 'aprobadores'));
+    $admin = Auth::guard('admin')->user();
+    if (!$admin->role_id) {
+        $aprobadores = \App\Models\Admin::with('role.areas')->get();
+    } else {
+        $aprobadores = collect([$admin->load('role.areas')]);
     }
+
+    return view('admin.documento_iso.edit', compact('documento', 'areas', 'procesos', 'doctypes', 'aprobadores'));
+}
+
 
     /**
      * Actualizar documento
@@ -405,11 +396,9 @@ public function aprobadoresPorArea($areaNombre)
     if (in_array($documento->estado, ['APROBADO', 'VIGENTE'])) {
         return back()->withErrors(['error' => 'No puedes modificar un documento aprobado o vigente.'])->withInput();
     }
-    // Solo el responsable puede editar si OBSERVADO
     if ($documento->estado === 'OBSERVADO' && !$esResponsable) {
         return back()->withErrors(['error' => 'Solo el responsable puede subir nueva versión en este estado.'])->withInput();
     }
-    // Solo el jefe puede editar si EN REVISIÓN
     if ($documento->estado === 'EN REVISIÓN' && !$esJefe) {
         return back()->withErrors(['error' => 'Solo el jefe o coordinador puede revisar este documento.'])->withInput();
     }
@@ -424,14 +413,11 @@ public function aprobadoresPorArea($areaNombre)
         'archivo'          => 'nullable|file|mimes:pdf,doc,docx',
         'fecha_revision'   => 'nullable|date',
         'fecha_aprobacion' => 'nullable|date',
-        'anio'             => 'nullable|integer',
-        'mes'              => 'nullable|string',
         'comentarios'      => 'nullable|string|max:1000',
         'modificaciones'   => 'nullable|string|max:1000',
         'observaciones'    => 'nullable|string|max:1000',
     ];
 
-    // Observaciones solo obligatorias para jefe cuando pasa a OBSERVADO
     if ($esJefe && $request->estado === 'OBSERVADO') {
         $rules['observaciones'] = 'required|string|max:1000';
     }
@@ -443,16 +429,14 @@ public function aprobadoresPorArea($areaNombre)
 
     $data = $request->all();
 
-    // ------ 1. RESPONSABLE SUBE NUEVA VERSIÓN (cuando estado = OBSERVADO) ------
+    // 1. RESPONSABLE SUBE NUEVA VERSIÓN (cuando estado = OBSERVADO)
     if ($documento->estado === 'OBSERVADO' && $esResponsable) {
-        // >>>>> VALIDACIÓN AGREGADA: El comentario es obligatorio para el asistente <<<<<
         $request->validate([
             'modificaciones' => 'required|string|max:1000',
         ], [
             'modificaciones.required' => 'Debes ingresar un comentario sobre la modificación realizada.',
         ]);
 
-        // Permitir solo subir archivo y comentarios de versión
         if ($request->hasFile('archivo')) {
             if ($documento->archivo && file_exists(public_path('uploads/documentos_iso/' . $documento->archivo))) {
                 unlink(public_path('uploads/documentos_iso/' . $documento->archivo));
@@ -469,9 +453,7 @@ public function aprobadoresPorArea($areaNombre)
                 'created_at' => now(),
             ]);
         }
-        // Después de subir nueva versión, cambia estado a EN REVISIÓN
         $data['estado'] = 'EN REVISIÓN';
-        // Limpia campos de aprobación
         $data['aprobado_por'] = null;
         $data['fecha_aprobacion'] = null;
 
@@ -488,10 +470,10 @@ public function aprobadoresPorArea($areaNombre)
         return redirect()->route('admin.documento_iso.index');
     }
 
-    // ------ 2. JEFE/COORDINADOR AGREGA OBSERVACIÓN ------
+    // 2. JEFE/COORDINADOR AGREGA OBSERVACIÓN
     if ($esJefe && $documento->estado === 'EN REVISIÓN' && $request->estado === 'OBSERVADO') {
         $documento->estado = 'OBSERVADO';
-        $documento->fecha_revision = now(); // Guardar fecha de revisión
+        $documento->fecha_revision = now();
         $documento->save();
 
         DocumentoIsoLog::create([
@@ -506,7 +488,7 @@ public function aprobadoresPorArea($areaNombre)
         return redirect()->route('admin.documento_iso.index');
     }
 
-    // ------ 3. JEFE/COORDINADOR APRUEBA (pasa a VIGENTE) ------
+    // 3. JEFE/COORDINADOR APRUEBA (pasa a VIGENTE)
     if ($esJefe && $documento->estado === 'EN REVISIÓN' && $request->estado === 'VIGENTE') {
         $data['aprobado_por'] = $admin->id;
         $data['fecha_aprobacion'] = now();
@@ -526,7 +508,6 @@ public function aprobadoresPorArea($areaNombre)
         return redirect()->route('admin.documento_iso.index');
     }
 
-    // Por defecto (no debería llegar aquí, pero por seguridad)
     return back()->withErrors(['error' => 'No tienes permisos para esta acción.'])->withInput();
 }
 

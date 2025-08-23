@@ -17,9 +17,9 @@
 @php
     $rolNombre = strtolower(auth()->user()->role->name ?? '');
     $esSuperadmin = !auth()->user()->role_id;
-    // Solo pueden crear Asistentes/Analistas de área o Superadmin
     $puedeCrear = $esSuperadmin ||
         (str_contains($rolNombre, 'asistente') || str_contains($rolNombre, 'analista'));
+    $ID_DOCTYPE_REGISTRO = 3; // <-- Cambia aquí si tu id de REGISTRO es diferente
 @endphp
 
 <div class="row">
@@ -47,6 +47,10 @@
                   <th>Área</th>
                   <th>Proceso</th>
                   <th>Tipo</th>
+                  {{-- Nuevas columnas para REGISTRO --}}
+                  <th>Frecuencia</th>
+                  <th>Año</th>
+                  <th>Mes</th>
                   <th>Estado</th>
                   <th>Responsable</th>
                   <th>Archivo</th>
@@ -64,6 +68,28 @@
                     <td>{{ $doc->process->area->nombre ?? '-' }}</td>
                     <td>{{ $doc->process->nombre ?? '-' }}</td>
                     <td>{{ $doc->doctype->nombre ?? '-' }}</td>
+                    {{-- Mostrar solo si es tipo REGISTRO --}}
+                    <td>
+                      @if($doc->doctype_id == $ID_DOCTYPE_REGISTRO)
+                        {{ $doc->frecuencia ?? '-' }}
+                      @else
+                        -
+                      @endif
+                    </td>
+                    <td>
+                      @if($doc->doctype_id == $ID_DOCTYPE_REGISTRO)
+                        {{ $doc->anio ?? '-' }}
+                      @else
+                        -
+                      @endif
+                    </td>
+                    <td>
+                      @if($doc->doctype_id == $ID_DOCTYPE_REGISTRO)
+                        {{ $doc->mes ?? '-' }}
+                      @else
+                        -
+                      @endif
+                    </td>
                     {{-- Estado con badge --}}
                     <td>
                       @php $estado = strtoupper($doc->estado); @endphp

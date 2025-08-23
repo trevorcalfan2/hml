@@ -18,6 +18,7 @@
       $esJefe = !auth()->user()->role_id || str_contains($rolNombre, 'jefe') || str_contains($rolNombre, 'coordinador');
       $esResponsable = auth()->user()->id == $documento->responsable;
       $estadoActual = $documento->estado;
+      $isRegistro = $documento->doctype_id == 3; // <-- Cambia aquí tu ID real de REGISTRO si no es 3
     @endphp
 
     <form action="{{ route('admin.documento_iso.update', $documento->id) }}" method="POST" enctype="multipart/form-data">
@@ -36,6 +37,50 @@
               <input type="text" class="form-control" value="{{ $documento->doc_id }}" readonly>
               <input type="hidden" name="doc_id" value="{{ $documento->doc_id }}">
             </div>
+
+            <!-- Año/Mes/Frecuencia SOLO si es REGISTRO y responsable está corrigiendo -->
+            @if($isRegistro && $estadoActual === 'OBSERVADO' && $esResponsable)
+              <div class="form-group col-md-4">
+                <label>Año</label>
+                <input type="number" name="anio" id="anio" class="form-control" value="{{ old('anio', $documento->anio) }}" required>
+              </div>
+              <div class="form-group col-md-4">
+                <label>Mes</label>
+                <select name="mes" id="mes" class="form-control" required>
+                  <option value="" disabled>Seleccione un mes</option>
+                  @foreach([
+                    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                  ] as $mes)
+                    <option value="{{ $mes }}" {{ (old('mes', $documento->mes) == $mes) ? 'selected' : '' }}>{{ $mes }}</option>
+                  @endforeach
+                </select>
+              </div>
+              <div class="form-group col-md-4">
+                <label>Frecuencia</label>
+                <select name="frecuencia" id="frecuencia" class="form-control" required>
+                  <option value="" disabled>Seleccione frecuencia</option>
+                  <option value="Mensual" {{ (old('frecuencia', $documento->frecuencia) == 'Mensual') ? 'selected' : '' }}>Mensual</option>
+                  <option value="Trimestral" {{ (old('frecuencia', $documento->frecuencia) == 'Trimestral') ? 'selected' : '' }}>Trimestral</option>
+                  <option value="Semestral" {{ (old('frecuencia', $documento->frecuencia) == 'Semestral') ? 'selected' : '' }}>Semestral</option>
+                  <option value="Anual" {{ (old('frecuencia', $documento->frecuencia) == 'Anual') ? 'selected' : '' }}>Anual</option>
+                </select>
+              </div>
+            @elseif($isRegistro)
+              <!-- Solo muestra como solo lectura -->
+              <div class="form-group col-md-4">
+                <label>Año</label>
+                <input type="text" class="form-control" value="{{ $documento->anio }}" readonly>
+              </div>
+              <div class="form-group col-md-4">
+                <label>Mes</label>
+                <input type="text" class="form-control" value="{{ $documento->mes }}" readonly>
+              </div>
+              <div class="form-group col-md-4">
+                <label>Frecuencia</label>
+                <input type="text" class="form-control" value="{{ $documento->frecuencia }}" readonly>
+              </div>
+            @endif
 
             <!-- Estado: select SOLO para jefe en revisión -->
             <div class="form-group col-md-4">
@@ -81,8 +126,6 @@
             <input type="hidden" name="process_id" value="{{ $documento->process_id }}">
             <input type="hidden" name="doctype_id" value="{{ $documento->doctype_id }}">
             <input type="hidden" name="aprobado_por" value="{{ $documento->aprobado_por }}">
-            <input type="hidden" name="anio" value="{{ $documento->anio }}">
-            <input type="hidden" name="mes" value="{{ $documento->mes }}">
             <input type="hidden" name="comentarios" value="{{ $documento->comentarios }}">
             <input type="hidden" name="fecha_revision" value="{{ $documento->fecha_revision }}">
             <input type="hidden" name="fecha_aprobacion" value="{{ $documento->fecha_aprobacion }}">
@@ -181,7 +224,6 @@
     </tr>
   @endforeach
 </tbody>
-
     </table>
   </div>
 </div>

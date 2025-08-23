@@ -193,8 +193,7 @@
 </div>
 
 <script>
- 
-  const DOCTYPE_REGISTRO_ID = 3; // 
+  const DOCTYPE_REGISTRO_ID = 3; // Cambia por tu ID real para REGISTRO
 
   function toggleRegistroExtra() {
     var doctypeId = document.getElementById('doctype_id').value;
